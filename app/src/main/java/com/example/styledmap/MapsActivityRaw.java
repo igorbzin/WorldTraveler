@@ -91,7 +91,11 @@ public class MapsActivityRaw extends AppCompatActivity
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Criteria criteria = new Criteria();
             String provider = locationManager.getBestProvider(criteria, false);
-            location = locationManager.getLastKnownLocation(provider);
+            try {
+                location = locationManager.getLastKnownLocation(provider);
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            }
             mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
         }
 
@@ -189,6 +193,22 @@ public class MapsActivityRaw extends AppCompatActivity
             public void onInfoWindowClick(Marker marker) {
                 Intent intent = new Intent(MapsActivityRaw.this, MarkerActivity.class);
                 startActivity(intent);
+            }
+        });
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
             }
         });
 
