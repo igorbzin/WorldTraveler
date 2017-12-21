@@ -1,11 +1,10 @@
 package com.example.styledmap;
 
-import android.Manifest;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -14,9 +13,7 @@ import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -24,6 +21,7 @@ import android.util.Log;
 import com.example.styledmap.data.PlacesContract;
 import com.example.styledmap.data.PlacesDBHelper;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
@@ -56,7 +54,7 @@ public class MapsActivityRaw extends AppCompatActivity
     private LatLng mLatLong;
     private String city;
     private Location location;
-    private PlaceAutocompleteFragment placeAutoComplete;
+
     private SQLiteDatabase mDb;
 
 
@@ -80,33 +78,34 @@ public class MapsActivityRaw extends AppCompatActivity
                         .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        /*
-        //Get Location Permission on runtime
-        if (ActivityCompat.checkSelfPermission(MapsActivityRaw.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivityRaw.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MapsActivityRaw.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }
-        */
 
-        if (isPermissionGranted()) {
-            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            Criteria criteria = new Criteria();
-            String provider = locationManager.getBestProvider(criteria, false);
-            try {
-                location = locationManager.getLastKnownLocation(provider);
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            }
-            mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
-        }
+        //Set up location manager
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                Criteria criteria = new Criteria();
+                String provider = null;
+                try {
+                    provider = locationManager.getBestProvider(criteria, false);
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
 
+
+                try {
+                    location = locationManager.getLastKnownLocation(provider);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+                mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
 
         //Retrieve markers from db
         retrieveMarkers();
 
 
         //Set up search bar for places
-        placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
+        PlaceAutocompleteFragment placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
         placeAutoComplete.setHint("Add visited places");
+        AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
+        placeAutoComplete.setFilter(filter);
         placeAutoComplete.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -218,7 +217,7 @@ public class MapsActivityRaw extends AppCompatActivity
                 LatLng markerPos = marker.getPosition();
                 double markerLat = markerPos.latitude;
                 double markerLon = markerPos.longitude;
-                boolean test = removeMarker(markerLat, markerLon);
+                removeMarker(markerLat, markerLon);
                 mMap.clear();
                 retrieveMarkers();
                 setMarkers();
@@ -311,7 +310,7 @@ public class MapsActivityRaw extends AppCompatActivity
         Cursor cursor = getAllPlaces();
         for (int i = 0; i < cursor.getCount(); i++) {
             if (!cursor.moveToPosition(i)) {
-
+                Log.d("Cursor", "Cursor is empty");
             } else {
                 String cCity = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_CITY));
                 double cLatitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LATITUDE));
@@ -321,27 +320,6 @@ public class MapsActivityRaw extends AppCompatActivity
                 markers.add(cMarkerOptions);
             }
         }
-    }
-
-
-    public boolean isPermissionGranted() {
-
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
-                Log.v(TAG, "Permission is granted");
-                return true;
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                }, 1);
-                return false;
-            }
-        } else { //permission is automatically granted on sdk<23 upon installation
-            Log.v(TAG, "Permission is granted");
-            return true;
-        }
-
     }
 
 }
