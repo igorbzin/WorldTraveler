@@ -1,7 +1,6 @@
 package com.example.styledmap;
 
 import android.Manifest;
-import android.app.ActivityOptions;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -72,10 +71,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     == PackageManager.PERMISSION_GRANTED) {
                 Log.v("PERMISSION", "Permission is granted");
                 new Handler().postDelayed(new Runnable() {
-
                     @Override
                     public void run() {
-                        startActivity(new Intent(MainActivity.this, MapsActivityRaw.class), ActivityOptions.makeSceneTransitionAnimation(MainActivity.this).toBundle());
+                        startActivity(new Intent(MainActivity.this, MapsActivityRaw.class));
                         MainActivity.this.finish();
                     }
                 }, SPLASH_TIME_OUT);

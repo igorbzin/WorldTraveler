@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.Point;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -17,6 +19,8 @@ import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import com.example.styledmap.data.PlacesContract;
 import com.example.styledmap.data.PlacesDBHelper;
@@ -28,6 +32,7 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -35,6 +40,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,9 +60,9 @@ public class MapsActivityRaw extends AppCompatActivity
     private LatLng mLatLong;
     private String city;
     private Location location;
-
+    private LatLng initPosition;
     private SQLiteDatabase mDb;
-
+    private TextView tv_delete;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +71,8 @@ public class MapsActivityRaw extends AppCompatActivity
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps_raw);
 
+        //Set up views
+        tv_delete = (TextView) findViewById(R.id.tv_delete_marker);
 
         //Set up Database
         PlacesDBHelper placesDBHelper = new PlacesDBHelper(this);
@@ -81,21 +89,26 @@ public class MapsActivityRaw extends AppCompatActivity
 
         //Set up location manager
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                Criteria criteria = new Criteria();
-                String provider = null;
-                try {
-                    provider = locationManager.getBestProvider(criteria, false);
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
+        Criteria criteria = new Criteria();
+        String provider = null;
+        try {
+            provider = locationManager.getBestProvider(criteria, false);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
 
 
-                try {
-                    location = locationManager.getLastKnownLocation(provider);
-                } catch (SecurityException e) {
-                    e.printStackTrace();
-                }
-                mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
+        try {
+            location = locationManager.getLastKnownLocation(provider);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         //Retrieve markers from db
         retrieveMarkers();
@@ -187,6 +200,13 @@ public class MapsActivityRaw extends AppCompatActivity
         mMap = googleMap;
 
 
+        //Setting default map rules
+        mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setRotateGesturesEnabled(false);
+        //Disable Map Toolbar:
+        mMap.getUiSettings().setMapToolbarEnabled(false);
+
+
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
@@ -195,32 +215,49 @@ public class MapsActivityRaw extends AppCompatActivity
             }
         });
 
+
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
-
+                tv_delete.setVisibility(View.VISIBLE);
+                tv_delete.setTextColor(Color.BLACK);
             }
 
             @Override
             public void onMarkerDrag(Marker marker) {
-
+                LatLng position = marker.getPosition();
+                Projection projection = mMap.getProjection();
+                Point screenPosition = projection.toScreenLocation(position);
+                int tv_delete_top_boundry = tv_delete.getTop();
+                if (screenPosition.y >= tv_delete_top_boundry) {
+                    tv_delete.setTextColor(Color.RED);
+                } else {
+                    tv_delete.setTextColor(Color.BLACK);
+                }
             }
 
             @Override
             public void onMarkerDragEnd(Marker marker) {
-            }
-        });
+                String title = marker.getTitle();
+                for (int i = 0; i < markers.size(); i++) {
+                    String titleCompare = markers.get(i).getTitle();
+                    if (title.equals(titleCompare)) {
+                        initPosition = markers.get(i).getPosition();
+                    }
+                }
+                LatLng position = marker.getPosition();
+                Projection projection = mMap.getProjection();
+                Point screenPosition = projection.toScreenLocation(position);
+                int tv_delete_top_boundry = tv_delete.getTop();
 
-        mMap.setOnInfoWindowLongClickListener(new GoogleMap.OnInfoWindowLongClickListener() {
-            @Override
-            public void onInfoWindowLongClick(Marker marker) {
-                LatLng markerPos = marker.getPosition();
-                double markerLat = markerPos.latitude;
-                double markerLon = markerPos.longitude;
-                removeMarker(markerLat, markerLon);
+                if (screenPosition.y >= tv_delete_top_boundry && initPosition != null) {
+                    boolean test = removeMarker(initPosition.latitude, initPosition.longitude);
+                    marker.remove();
+                }
                 mMap.clear();
                 retrieveMarkers();
                 setMarkers();
+                tv_delete.setVisibility(View.INVISIBLE);
             }
         });
 
@@ -235,9 +272,6 @@ public class MapsActivityRaw extends AppCompatActivity
             e.printStackTrace();
         }
 
-        //Styling map, setting default map rules
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setRotateGesturesEnabled(false);
 
         //Style the map
         try {
