@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
 import com.example.styledmap.data.PlacesContract;
 import com.example.styledmap.data.PlacesDBHelper;
 import com.google.android.gms.common.api.Status;
@@ -44,6 +45,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -60,9 +62,10 @@ public class MapsActivityRaw extends AppCompatActivity
     private LatLng mLatLong;
     private String city;
     private Location location;
-    private LatLng initPosition;
     private SQLiteDatabase mDb;
     private TextView tv_delete;
+    private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
+    private Cursor mCursor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +89,8 @@ public class MapsActivityRaw extends AppCompatActivity
                         .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+
+        markerHashMap = new LinkedHashMap<>();
 
         //Set up location manager
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -111,7 +116,8 @@ public class MapsActivityRaw extends AppCompatActivity
         }
 
         //Retrieve markers from db
-        retrieveMarkers();
+        mCursor = getAllPlaces();
+        retrieveMarkers(mCursor);
 
 
         //Set up search bar for places
@@ -141,6 +147,32 @@ public class MapsActivityRaw extends AppCompatActivity
                     e.printStackTrace();
                 }
 
+
+                //Check if selected place was already added
+
+                for (int i = 0; i < markerHashMap.size(); i++) {
+                    MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
+                    mCursor = getAllPlaces();
+                    retrieveMarkers(mCursor);
+                    if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
+
+                        //Initialize dialog object
+                        AlertDialog.Builder duplicatePlace = new AlertDialog.Builder(MapsActivityRaw.this);
+                        duplicatePlace.setTitle("Warning");
+                        duplicatePlace.setMessage("You already have added this place");
+                        duplicatePlace.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                        duplicatePlace.show();
+                        return;
+                    }
+
+                }
+
+
                 // Initialize the dialog object
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivityRaw.this);
                 builder.setTitle(city);
@@ -164,7 +196,6 @@ public class MapsActivityRaw extends AppCompatActivity
 
                     }
                 });
-
 
                 //Set button to cancel add action
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -199,14 +230,27 @@ public class MapsActivityRaw extends AppCompatActivity
         //Initialize the map
         mMap = googleMap;
 
-
         //Setting default map rules
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
+
         //Disable Map Toolbar:
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                marker.showInfoWindow();
+                return true;
+            }
+        });
 
+
+        //Configure custom infowindow through InfoWindowAdapter
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivityRaw.this);
+        mMap.setInfoWindowAdapter(adapter);
+
+        //Set onclicklistener for InfoWindow
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
@@ -215,7 +259,7 @@ public class MapsActivityRaw extends AppCompatActivity
             }
         });
 
-
+        //Set onclicklistener for Marker dragging to delete it
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
@@ -238,24 +282,20 @@ public class MapsActivityRaw extends AppCompatActivity
 
             @Override
             public void onMarkerDragEnd(Marker marker) {
-                String title = marker.getTitle();
-                for (int i = 0; i < markers.size(); i++) {
-                    String titleCompare = markers.get(i).getTitle();
-                    if (title.equals(titleCompare)) {
-                        initPosition = markers.get(i).getPosition();
-                    }
-                }
+                String string_id = marker.getSnippet();
+                int id = Integer.parseInt(string_id);
                 LatLng position = marker.getPosition();
                 Projection projection = mMap.getProjection();
                 Point screenPosition = projection.toScreenLocation(position);
                 int tv_delete_top_boundry = tv_delete.getTop();
 
-                if (screenPosition.y >= tv_delete_top_boundry && initPosition != null) {
-                    boolean test = removeMarker(initPosition.latitude, initPosition.longitude);
+                if (screenPosition.y >= tv_delete_top_boundry) {
+                    boolean test = removeMarker(id);
                     marker.remove();
                 }
                 mMap.clear();
-                retrieveMarkers();
+                mCursor = getAllPlaces();
+                retrieveMarkers(mCursor);
                 setMarkers();
                 tv_delete.setVisibility(View.INVISIBLE);
             }
@@ -324,24 +364,25 @@ public class MapsActivityRaw extends AppCompatActivity
     }
 
     //Remove marker from db
-    private boolean removeMarker(double latitude, double longitude) {
-        return mDb.delete(PlacesContract.PlacesEntry.TABLE_NAME, PlacesContract.PlacesEntry.COLUMN_LATITUDE + "=" + latitude + " AND " + PlacesContract.PlacesEntry.COLUMN_LONGITUDE + "=" + longitude, null) > 0;
+    private boolean removeMarker(int id) {
+        return mDb.delete(PlacesContract.PlacesEntry.TABLE_NAME, PlacesContract.PlacesEntry._ID + "=" + id, null) > 0;
     }
 
 
     //Function to set all markers retrieved from database
     private void setMarkers() {
-        for (int i = 0; i < markers.size(); i++) {
-            MarkerOptions option = markers.get(i);
+        for (int i = 0; i < markerHashMap.size(); i++) {
+            MarkerOptions option = (new ArrayList<>(markerHashMap.values()).get(i));
             mMap.addMarker(option);
         }
     }
 
 
     //Retrieve all markers from database
-    private void retrieveMarkers() {
+    private void retrieveMarkers(Cursor cursor) {
         markers.clear();
-        Cursor cursor = getAllPlaces();
+        markerHashMap.clear();
+        cursor = getAllPlaces();
         for (int i = 0; i < cursor.getCount(); i++) {
             if (!cursor.moveToPosition(i)) {
                 Log.d("Cursor", "Cursor is empty");
@@ -349,9 +390,10 @@ public class MapsActivityRaw extends AppCompatActivity
                 String cCity = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_CITY));
                 double cLatitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LATITUDE));
                 double cLongitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LONGITUDE));
+                int cId = cursor.getInt(cursor.getColumnIndex(PlacesContract.PlacesEntry._ID));
                 LatLng cLatLng = new LatLng(cLatitude, cLongitude);
-                MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                markers.add(cMarkerOptions);
+                MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                markerHashMap.put(cId, cMarkerOptions);
             }
         }
     }
