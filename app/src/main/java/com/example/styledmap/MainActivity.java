@@ -86,6 +86,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
         } else { //permission is automatically granted on sdk<23 upon installation
             Log.v("PERMISSION", "Permission is granted");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startActivity(new Intent(MainActivity.this, MapsActivityRaw.class));
+                        MainActivity.this.finish();
+                    }
+                }, SPLASH_TIME_OUT);
             return;
         }
 

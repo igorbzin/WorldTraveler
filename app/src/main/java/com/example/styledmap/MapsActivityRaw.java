@@ -188,12 +188,10 @@ public class MapsActivityRaw extends AppCompatActivity
                                 .position(mLatLong)
                                 .title(city)
                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                        markers.add(currentMarker);
                         mMap.addMarker(currentMarker);
 
-                        //add place into database
+                        //Add place into database
                         addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
-
                     }
                 });
 
