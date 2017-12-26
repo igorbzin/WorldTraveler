@@ -29,6 +29,8 @@
             android:name=".MarkerActivity"
             android:theme="@style/AppTheme.MarkerActivity"></activity>
 
+        <activity android:name=".SettingsActivity"></activity>
+
         <activity android:name=".MainActivity"
             android:noHistory="true"
             >

@@ -16,11 +16,14 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.support.v7.widget.Toolbar;
 
 import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
 import com.example.styledmap.data.PlacesContract;
@@ -41,7 +44,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,6 +69,8 @@ public class MapsActivityRaw extends AppCompatActivity
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private Cursor mCursor;
     private Toolbar mActionBar;
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
 
 
     @Override
@@ -78,11 +82,13 @@ public class MapsActivityRaw extends AppCompatActivity
 
         mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
         setSupportActionBar(mActionBar);
-        getSupportActionBar().setTitle("");
-
-        TextView tb_title = (TextView) findViewById(R.id.toolbar_title);
 
 
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(MapsActivityRaw.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mDrawerToggle.syncState();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //Set up views
         tv_delete = (TextView) findViewById(R.id.tv_delete_marker);
@@ -384,9 +390,14 @@ public class MapsActivityRaw extends AppCompatActivity
                 markerHashMap.put(cId, cMarkerOptions);
             }
         }
+
     }
 
-
-
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }
