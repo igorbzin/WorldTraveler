@@ -1,5 +1,6 @@
 package com.example.styledmap.Adapters;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 
@@ -8,6 +9,14 @@ import android.view.ViewGroup;
  */
 
 public class InfoWindowRVAdapter extends RecyclerView.Adapter {
+
+    private Context context;
+
+
+    public InfoWindowRVAdapter(Context c){
+        context = c;
+    }
+
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         return null;

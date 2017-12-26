@@ -3,7 +3,6 @@ package com.example.styledmap;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -16,11 +15,12 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
 import com.example.styledmap.data.PlacesContract;
@@ -66,6 +66,8 @@ public class MapsActivityRaw extends AppCompatActivity
     private TextView tv_delete;
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private Cursor mCursor;
+    private Toolbar mActionBar;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +75,14 @@ public class MapsActivityRaw extends AppCompatActivity
 
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps_raw);
+
+        mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
+        setSupportActionBar(mActionBar);
+        getSupportActionBar().setTitle("");
+
+        TextView tb_title = (TextView) findViewById(R.id.toolbar_title);
+
+
 
         //Set up views
         tv_delete = (TextView) findViewById(R.id.tv_delete_marker);
@@ -95,18 +105,16 @@ public class MapsActivityRaw extends AppCompatActivity
         //Set up location manager
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-        String provider = null;
+        String provider;
+
         try {
             provider = locationManager.getBestProvider(criteria, false);
+            location = locationManager.getLastKnownLocation(provider);
+
         } catch (NullPointerException e) {
             e.printStackTrace();
-        }
-
-
-        try {
-            location = locationManager.getLastKnownLocation(provider);
-        } catch (SecurityException e) {
-            e.printStackTrace();
+        } catch (SecurityException exception) {
+            exception.printStackTrace();
         }
 
         try {
@@ -122,7 +130,7 @@ public class MapsActivityRaw extends AppCompatActivity
 
         //Set up search bar for places
         PlaceAutocompleteFragment placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
-        placeAutoComplete.setHint("Add visited places");
+        placeAutoComplete.setHint(getResources().getString(R.string.placeautocomplete_hint));
         AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
         placeAutoComplete.setFilter(filter);
         placeAutoComplete.setOnPlaceSelectedListener(new PlaceSelectionListener() {
@@ -150,62 +158,40 @@ public class MapsActivityRaw extends AppCompatActivity
 
                 //Check if selected place was already added
 
+                mCursor = getAllPlaces();
+                retrieveMarkers(mCursor);
                 for (int i = 0; i < markerHashMap.size(); i++) {
                     MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
-                    mCursor = getAllPlaces();
-                    retrieveMarkers(mCursor);
                     if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
-
-                        //Initialize dialog object
-                        AlertDialog.Builder duplicatePlace = new AlertDialog.Builder(MapsActivityRaw.this);
-                        duplicatePlace.setTitle("Warning");
-                        duplicatePlace.setMessage("You already have added this place");
-                        duplicatePlace.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-                        duplicatePlace.show();
+                        Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
+                        View sb_duplicateView = duplicate.getView();
+                        TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
+                        tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
+                        duplicate.show();
                         return;
                     }
 
                 }
 
 
-                // Initialize the dialog object
-                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivityRaw.this);
-                builder.setTitle(city);
-                builder.setMessage("This is not the city you were looking for? Press cancel and try again.");
+                Snackbar placeAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
+                View sb_placeAddedView = placeAdded.getView();
+                sb_placeAddedView.setBackgroundColor(getColor(R.color.colorPrimary));
+                TextView tv_sb_placeAdded = (TextView) sb_placeAddedView.findViewById(android.support.design.R.id.snackbar_text);
+                tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                placeAdded.show();
+
+                MarkerOptions currentMarker = new MarkerOptions()
+                        .position(mLatLong)
+                        .title(city)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                mMap.addMarker(currentMarker);
+
+                //Add place into database
+                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
 
 
-                //Set positive button for marker placement
-                builder.setPositiveButton("ADD PLACE", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //add marker on positive click on map
-                        MarkerOptions currentMarker = new MarkerOptions()
-                                .position(mLatLong)
-                                .title(city)
-                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                        mMap.addMarker(currentMarker);
-
-                        //Add place into database
-                        addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
-                    }
-                });
-
-                //Set button to cancel add action
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-
-
-                // Set up the buttons
-                builder.show();
             }
 
 
@@ -248,6 +234,7 @@ public class MapsActivityRaw extends AppCompatActivity
         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivityRaw.this);
         mMap.setInfoWindowAdapter(adapter);
 
+
         //Set onclicklistener for InfoWindow
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
@@ -256,6 +243,7 @@ public class MapsActivityRaw extends AppCompatActivity
                 startActivity(intent);
             }
         });
+
 
         //Set onclicklistener for Marker dragging to delete it
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
@@ -369,8 +357,10 @@ public class MapsActivityRaw extends AppCompatActivity
 
     //Function to set all markers retrieved from database
     private void setMarkers() {
-        for (int i = 0; i < markerHashMap.size(); i++) {
-            MarkerOptions option = (new ArrayList<>(markerHashMap.values()).get(i));
+        ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
+
+        for (int i = 0; i < markerOptionsList.size(); i++) {
+            MarkerOptions option = markerOptionsList.get(i);
             mMap.addMarker(option);
         }
     }
@@ -395,5 +385,8 @@ public class MapsActivityRaw extends AppCompatActivity
             }
         }
     }
+
+
+
 
 }

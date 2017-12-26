@@ -22,15 +22,15 @@ import android.util.Log;
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final int REQUEST_LOCATION = 100;
+    private static final int REQUEST_INTERNET = 101;
     private static int SPLASH_TIME_OUT = 2000;
+    private static final int MARSHMALLOW = 23;
 
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.hide();
         requestPermission();
     }
 
@@ -44,11 +44,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 Intent intent = new Intent(MainActivity.this, MapsActivityRaw.class);
                 startActivity(intent);
                 finish();
-            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
                 AlertDialog.Builder locationError = new AlertDialog.Builder(MainActivity.this);
-                locationError.setTitle("Error");
-                locationError.setMessage("You didn't give the application the permission to get your location");
-                locationError.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                locationError.setTitle(R.string.dialog_title_permission_denied);
+                locationError.setMessage(R.string.dialog_text_permission_denied);
+                locationError.setPositiveButton(R.string.dialog_positive_btn_permission_denied, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         finish();
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     public void requestPermission() {
 
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= MARSHMALLOW) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 Log.v("PERMISSION", "Permission is granted");
@@ -80,8 +80,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 return;
             } else {
                 requestPermissions(new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                }, REQUEST_LOCATION);
+                        Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
                 return;
             }
         } else { //permission is automatically granted on sdk<23 upon installation

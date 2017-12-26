@@ -3,6 +3,8 @@
     package="com.example.styledmap">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -28,7 +30,8 @@
             android:theme="@style/AppTheme.MarkerActivity"></activity>
 
         <activity android:name=".MainActivity"
-            android:noHistory="true">
+            android:noHistory="true"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,5 +39,6 @@
             </intent-filter>
         </activity>
     </application>
+
 
 </manifest>

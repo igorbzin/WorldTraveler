@@ -12,7 +12,6 @@ import android.view.WindowManager;
 
 public class MarkerActivity extends AppCompatActivity {
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -29,5 +28,6 @@ public class MarkerActivity extends AppCompatActivity {
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
         ActionBar actionBar = getSupportActionBar();
         actionBar.hide();
+
     }
 }
