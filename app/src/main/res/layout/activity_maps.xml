@@ -5,7 +5,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MapsActivityRaw">
+    tools:context=".MapsActivity">
 
 
     <android.support.design.widget.NavigationView
@@ -51,7 +51,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 map:cameraZoom="10"
-                tools:context="com.example.styledmap.MapsActivityRaw" />
+                tools:context="com.example.styledmap.MapsActivity" />
 
             <TextView
                 android:id="@+id/tv_delete_marker"
@@ -67,20 +67,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
-
-            <fragment
-                android:id="@+id/place_autocomplete"
-                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
-                android:layout_width="match_parent"
-                android:layout_height="32dp"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginBottom="8dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
 
             <Button
                 android:id="@+id/btn_add_place"

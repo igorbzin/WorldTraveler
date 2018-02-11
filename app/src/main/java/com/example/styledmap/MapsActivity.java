@@ -1,6 +1,7 @@
 package com.example.styledmap;
 
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -16,8 +17,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -31,11 +30,11 @@ import android.widget.TextView;
 import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
 import com.example.styledmap.data.PlacesContract;
 import com.example.styledmap.data.PlacesDBHelper;
-import com.google.android.gms.common.api.Status;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
-import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -57,13 +56,13 @@ import java.util.Locale;
 /**
  * A styled map using JSON styles from a raw resource.
  */
-public class MapsActivityRaw extends AppCompatActivity
+public class MapsActivity extends AppCompatActivity
         implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ArrayList<MarkerOptions> markers = new ArrayList<>();
     private Geocoder gcd;
-    private static final String TAG = MapsActivityRaw.class.getSimpleName();
+    private static final String TAG = MapsActivity.class.getSimpleName();
     private LatLng mLatLong;
     private String city;
     private Location location;
@@ -75,27 +74,15 @@ public class MapsActivityRaw extends AppCompatActivity
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
 
+    private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
 
-        final Fragment fragment_place_search = new Fragment();
-        getSupportFragmentManager().beginTransaction().add(R.id.place_autocomplete, fragment_place_search).commit();
-
         // Retrieve the content view that renders the map.
-        setContentView(R.layout.activity_maps_raw);
-
-
-        Button btnAddPlace = (Button) findViewById(R.id.btn_add_place);
-        btnAddPlace.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createSearchFragment();
-                replaceFragmentWithAnimation(fragment_place_search, "test");
-            }
-        });
+        setContentView(R.layout.activity_maps);
 
 
         mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
@@ -103,7 +90,7 @@ public class MapsActivityRaw extends AppCompatActivity
 
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerToggle = new ActionBarDrawerToggle(MapsActivityRaw.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
+        mDrawerToggle = new ActionBarDrawerToggle(MapsActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
         mDrawerLayout.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -182,8 +169,32 @@ public class MapsActivityRaw extends AppCompatActivity
         });
 
 
+
+
+        Button btnAddPlace = (Button) findViewById(R.id.btn_add_place);
+        btnAddPlace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                try {
+                    AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
+
+                    Intent intent =
+                            new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                                    .setFilter(filter)
+                                    .build(MapsActivity.this);
+                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
+                } catch (GooglePlayServicesRepairableException e) {
+                    // TODO: Handle the error.
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    // TODO: Handle the error.
+                }
+            }
+        });
+
+
         //Configure custom infowindow through InfoWindowAdapter
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivityRaw.this);
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivity.this);
         mMap.setInfoWindowAdapter(adapter);
 
 
@@ -191,7 +202,7 @@ public class MapsActivityRaw extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                Intent intent = new Intent(MapsActivityRaw.this, MarkerActivity.class);
+                Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
                 startActivity(intent);
             }
         });
@@ -348,25 +359,16 @@ public class MapsActivityRaw extends AppCompatActivity
     }
 
 
-    public void replaceFragmentWithAnimation(android.support.v4.app.Fragment fragment, String tag){
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.enter_from_bottom, R.anim.exit_to_top);
-        transaction.remove(fragment);
-        transaction.add(R.id.place_autocomplete, fragment);
-        transaction.addToBackStack(tag);
-        transaction.commit();
-    }
 
 
-    public void createSearchFragment(){
-        //Set up search bar for places
-        PlaceAutocompleteFragment placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
-        placeAutoComplete.setHint(getResources().getString(R.string.placeautocomplete_hint));
-        AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
-        placeAutoComplete.setFilter(filter);
-        placeAutoComplete.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1) {
+            if(resultCode == Activity.RESULT_OK){
+                Place place = PlaceAutocomplete.getPlace(this, data);
+
+
                 //Retrieve information about selected place and zoom into it
                 mLatLong = place.getLatLng();
                 CameraPosition cameraPosition = new CameraPosition.Builder()
@@ -378,7 +380,7 @@ public class MapsActivityRaw extends AppCompatActivity
 
 
                 //Retrieve location information from latitude and longitude
-                gcd = new Geocoder(MapsActivityRaw.this, Locale.getDefault());
+                gcd = new Geocoder(MapsActivity.this, Locale.getDefault());
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
                     city = address.get(0).getLocality();
@@ -423,15 +425,16 @@ public class MapsActivityRaw extends AppCompatActivity
                 addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
 
 
+
+
             }
-
-
-            @Override
-            public void onError(Status status) {
-                Log.d("Maps", "An error occurred: " + status);
+            if (resultCode == Activity.RESULT_CANCELED) {
+                //Write your code if there's no result
             }
-        });
-
+        }
     }
+
+
+
 
 }
