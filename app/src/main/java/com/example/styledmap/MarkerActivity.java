@@ -26,8 +26,6 @@ public class MarkerActivity extends AppCompatActivity {
         int height = dm.heightPixels;
         int width = dm.widthPixels;
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.hide();
 
     }
 }

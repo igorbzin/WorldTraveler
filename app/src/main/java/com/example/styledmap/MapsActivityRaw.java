@@ -16,6 +16,8 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -23,6 +25,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
@@ -77,8 +80,23 @@ public class MapsActivityRaw extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
+        final Fragment fragment_place_search = new Fragment();
+        getSupportFragmentManager().beginTransaction().add(R.id.place_autocomplete, fragment_place_search).commit();
+
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps_raw);
+
+
+        Button btnAddPlace = (Button) findViewById(R.id.btn_add_place);
+        btnAddPlace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createSearchFragment();
+                replaceFragmentWithAnimation(fragment_place_search, "test");
+            }
+        });
+
 
         mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
         setSupportActionBar(mActionBar);
@@ -134,78 +152,6 @@ public class MapsActivityRaw extends AppCompatActivity
         retrieveMarkers(mCursor);
 
 
-        //Set up search bar for places
-        PlaceAutocompleteFragment placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
-        placeAutoComplete.setHint(getResources().getString(R.string.placeautocomplete_hint));
-        AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
-        placeAutoComplete.setFilter(filter);
-        placeAutoComplete.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-                //Retrieve information about selected place and zoom into it
-                mLatLong = place.getLatLng();
-                CameraPosition cameraPosition = new CameraPosition.Builder()
-                        .target(new LatLng(mLatLong.latitude, mLatLong.longitude))      // Sets the center of the map to location user
-                        .zoom(4)                   // Sets the zoom
-                        .build();                   // Creates a CameraPosition from the builder
-                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                Log.d("Maps", "Place selected: " + place.getName());
-
-
-                //Retrieve location information from latitude and longitude
-                gcd = new Geocoder(MapsActivityRaw.this, Locale.getDefault());
-                try {
-                    List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
-                    city = address.get(0).getLocality();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-
-                //Check if selected place was already added
-
-                mCursor = getAllPlaces();
-                retrieveMarkers(mCursor);
-                for (int i = 0; i < markerHashMap.size(); i++) {
-                    MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
-                    if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
-                        Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
-                        View sb_duplicateView = duplicate.getView();
-                        TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
-                        tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
-                        duplicate.show();
-                        return;
-                    }
-
-                }
-
-
-                Snackbar placeAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
-                View sb_placeAddedView = placeAdded.getView();
-                sb_placeAddedView.setBackgroundColor(getColor(R.color.colorPrimary));
-                TextView tv_sb_placeAdded = (TextView) sb_placeAddedView.findViewById(android.support.design.R.id.snackbar_text);
-                tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                placeAdded.show();
-
-                MarkerOptions currentMarker = new MarkerOptions()
-                        .position(mLatLong)
-                        .title(city)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                mMap.addMarker(currentMarker);
-
-                //Add place into database
-                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
-
-
-            }
-
-
-            @Override
-            public void onError(Status status) {
-                Log.d("Maps", "An error occurred: " + status);
-            }
-        });
 
     }
 
@@ -400,4 +346,92 @@ public class MapsActivityRaw extends AppCompatActivity
         }
         return super.onOptionsItemSelected(item);
     }
+
+
+    public void replaceFragmentWithAnimation(android.support.v4.app.Fragment fragment, String tag){
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.enter_from_bottom, R.anim.exit_to_top);
+        transaction.remove(fragment);
+        transaction.add(R.id.place_autocomplete, fragment);
+        transaction.addToBackStack(tag);
+        transaction.commit();
+    }
+
+
+    public void createSearchFragment(){
+        //Set up search bar for places
+        PlaceAutocompleteFragment placeAutoComplete = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete);
+        placeAutoComplete.setHint(getResources().getString(R.string.placeautocomplete_hint));
+        AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
+        placeAutoComplete.setFilter(filter);
+        placeAutoComplete.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                //Retrieve information about selected place and zoom into it
+                mLatLong = place.getLatLng();
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(mLatLong.latitude, mLatLong.longitude))      // Sets the center of the map to location user
+                        .zoom(4)                   // Sets the zoom
+                        .build();                   // Creates a CameraPosition from the builder
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                Log.d("Maps", "Place selected: " + place.getName());
+
+
+                //Retrieve location information from latitude and longitude
+                gcd = new Geocoder(MapsActivityRaw.this, Locale.getDefault());
+                try {
+                    List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
+                    city = address.get(0).getLocality();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+                //Check if selected place was already added
+
+                mCursor = getAllPlaces();
+                retrieveMarkers(mCursor);
+                for (int i = 0; i < markerHashMap.size(); i++) {
+                    MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
+                    if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
+                        Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
+                        View sb_duplicateView = duplicate.getView();
+                        TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
+                        tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
+                        duplicate.show();
+                        return;
+                    }
+
+                }
+
+
+                Snackbar placeAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
+                View sb_placeAddedView = placeAdded.getView();
+                sb_placeAddedView.setBackgroundColor(getColor(R.color.colorPrimary));
+                TextView tv_sb_placeAdded = (TextView) sb_placeAddedView.findViewById(android.support.design.R.id.snackbar_text);
+                tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                placeAdded.show();
+
+                MarkerOptions currentMarker = new MarkerOptions()
+                        .position(mLatLong)
+                        .title(city)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                mMap.addMarker(currentMarker);
+
+                //Add place into database
+                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
+
+
+            }
+
+
+            @Override
+            public void onError(Status status) {
+                Log.d("Maps", "An error occurred: " + status);
+            }
+        });
+
+    }
+
 }
