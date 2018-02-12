@@ -17,6 +17,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -52,6 +55,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * A styled map using JSON styles from a raw resource.
@@ -73,6 +77,9 @@ public class MapsActivity extends AppCompatActivity
     private Toolbar mActionBar;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
+    private Button mAddButton;
+    private Animation mStartFadeInAnimation;
+    private Animation mStartFadeOutAnimation;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
@@ -87,16 +94,45 @@ public class MapsActivity extends AppCompatActivity
 
         mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
         setSupportActionBar(mActionBar);
-
+        mActionBar.setBackgroundColor(ContextCompat.getColor(MapsActivity.this, R.color.colorPrimaryDark));
+        mActionBar.setTitleTextColor(ContextCompat.getColor(MapsActivity.this, R.color.textColor));
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(MapsActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
         mDrawerLayout.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //Set up views
         tv_delete = (TextView) findViewById(R.id.tv_delete_marker);
+
+
+        //Set up add button
+
+        mAddButton = (Button) findViewById(R.id.btn_add_place);
+        mAddButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                try {
+                    AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
+
+                    Intent intent =
+                            new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                                    .setFilter(filter)
+                                    .build(MapsActivity.this);
+
+                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                } catch (GooglePlayServicesRepairableException e) {
+                    // TODO: Handle the error.
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    // TODO: Handle the error.
+                }
+            }
+        });
+
 
         //Set up Database
         PlacesDBHelper placesDBHelper = new PlacesDBHelper(this);
@@ -139,6 +175,12 @@ public class MapsActivity extends AppCompatActivity
         retrieveMarkers(mCursor);
 
 
+        //Animations setup
+        mStartFadeInAnimation = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in);
+        mStartFadeInAnimation.setFillAfter(true);
+        mStartFadeOutAnimation = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
+        mStartFadeOutAnimation.setFillAfter(true);
+
 
     }
 
@@ -169,51 +211,14 @@ public class MapsActivity extends AppCompatActivity
         });
 
 
-
-
-        Button btnAddPlace = (Button) findViewById(R.id.btn_add_place);
-        btnAddPlace.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                try {
-                    AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
-
-                    Intent intent =
-                            new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
-                                    .setFilter(filter)
-                                    .build(MapsActivity.this);
-                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
-                } catch (GooglePlayServicesRepairableException e) {
-                    // TODO: Handle the error.
-                } catch (GooglePlayServicesNotAvailableException e) {
-                    // TODO: Handle the error.
-                }
-            }
-        });
-
-
-        //Configure custom infowindow through InfoWindowAdapter
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivity.this);
-        mMap.setInfoWindowAdapter(adapter);
-
-
-        //Set onclicklistener for InfoWindow
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
-                Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
-                startActivity(intent);
-            }
-        });
-
-
         //Set onclicklistener for Marker dragging to delete it
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
-                tv_delete.setVisibility(View.VISIBLE);
                 tv_delete.setTextColor(Color.BLACK);
+
+                tv_delete.startAnimation(mStartFadeInAnimation);
+                mAddButton.startAnimation(mStartFadeOutAnimation);
             }
 
             @Override
@@ -227,6 +232,8 @@ public class MapsActivity extends AppCompatActivity
                 } else {
                     tv_delete.setTextColor(Color.BLACK);
                 }
+
+
             }
 
             @Override
@@ -246,7 +253,23 @@ public class MapsActivity extends AppCompatActivity
                 mCursor = getAllPlaces();
                 retrieveMarkers(mCursor);
                 setMarkers();
-                tv_delete.setVisibility(View.INVISIBLE);
+
+                tv_delete.startAnimation(mStartFadeOutAnimation);
+                mAddButton.startAnimation(mStartFadeInAnimation);
+            }
+        });
+
+
+        //Configure custom infowindow through InfoWindowAdapter
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivity.this);
+        mMap.setInfoWindowAdapter(adapter);
+
+        //Set onclicklistener for InfoWindow
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -359,13 +382,11 @@ public class MapsActivity extends AppCompatActivity
     }
 
 
-
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == 1) {
-            if(resultCode == Activity.RESULT_OK){
+            if (resultCode == Activity.RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(this, data);
 
 
@@ -425,16 +446,12 @@ public class MapsActivity extends AppCompatActivity
                 addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
 
 
-
-
             }
             if (resultCode == Activity.RESULT_CANCELED) {
                 //Write your code if there's no result
             }
         }
     }
-
-
 
 
 }
