@@ -21,7 +21,7 @@ import android.util.Log;
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final int REQUEST_PERMISSIONS = 100;
-    private static int SPLASH_TIME_OUT = 2000;
+    private static int SPLASH_TIME_OUT = 1000;
     private static final int MARSHMALLOW = 23;
 
 
@@ -40,22 +40,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         if (requestCode == REQUEST_PERMISSIONS) {
             Log.i("PERMISSION", "Received response for Location permission request.");
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 startActivity(intent);
                 finish();
-            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                AlertDialog.Builder locationError = new AlertDialog.Builder(MainActivity.this);
-                locationError.setTitle(R.string.dialog_title_permission_denied);
-                locationError.setMessage(R.string.dialog_text_permission_denied);
-                locationError.setPositiveButton(R.string.dialog_positive_btn_permission_denied, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                        System.exit(0);
-                    }
-                });
-                locationError.show();
+            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+                requestPermissions();
             }
 
         } else {
@@ -68,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         if (Build.VERSION.SDK_INT >= MARSHMALLOW) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
+                    == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 Log.v("PERMISSION", "Permission is granted");
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -79,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 }, SPLASH_TIME_OUT);
                 return;
             } else {
-                ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSIONS);
+                ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSIONS);
                 return;
             }
         } else { //permission is automatically granted on sdk<23 upon installation

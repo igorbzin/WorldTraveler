@@ -1,6 +1,8 @@
 package com.example.styledmap.Adapters;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -9,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.example.styledmap.R;
 import com.squareup.picasso.Picasso;
@@ -23,12 +26,12 @@ import java.util.ArrayList;
 public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapter.ImageViewHolder> {
 
     private Context mContext;
-    private ArrayList<Uri> mPictureUris;
+    private ArrayList<String> mPicturePaths;
 
 
-    public InfoWindowRVAdapter(Context c, ArrayList<Uri> pictureLinks){
+    public InfoWindowRVAdapter(Context c, ArrayList<String> picturePaths){
         mContext = c;
-        mPictureUris = pictureLinks;
+        mPicturePaths= picturePaths;
     }
 
     @Override
@@ -39,12 +42,14 @@ public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapte
 
     @Override
     public void onBindViewHolder(InfoWindowRVAdapter.ImageViewHolder holder, int position) {
-        Picasso.with(mContext).load(mPictureUris.get(position)).fit().into(holder.selectedPicture);
+        Picasso.with(mContext).load(Uri.parse(mPicturePaths.get(position))).fit().into(holder.selectedPicture);
+
+
     }
 
     @Override
     public int getItemCount() {
-        return mPictureUris.size();
+        return mPicturePaths.size();
     }
 
 
@@ -53,9 +58,11 @@ public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapte
 
         public ImageView selectedPicture;
 
+
         public ImageViewHolder(View itemView){
             super(itemView);
             selectedPicture = (ImageView) itemView.findViewById(R.id.rv_item_image);
+
         }
 
 

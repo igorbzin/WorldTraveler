@@ -57,7 +57,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * A styled map using JSON styles from a raw resource.
@@ -67,7 +66,6 @@ public class MapsActivity extends AppCompatActivity
 
 
     public static SQLiteDatabase mDb;
-    public static int currentMarkerID;
     private String mStringUris;
     private GoogleMap mMap;
     private ArrayList<MarkerOptions> markers = new ArrayList<>();
@@ -210,9 +208,6 @@ public class MapsActivity extends AppCompatActivity
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                String string_id = marker.getSnippet();
-                int id = Integer.parseInt(string_id);
-                currentMarkerID = id;
                 marker.showInfoWindow();
                 return true;
             }
@@ -231,7 +226,14 @@ public class MapsActivity extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
+
+                Cursor cursor = getAllPlaces();
+                retrieveMarkers(cursor);
+
+                String test = marker.getId();
+                int id = Integer.parseInt(marker.getSnippet());
                 Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
+                intent.putExtra("MarkerID", id);
                 startActivity(intent);
             }
         });
@@ -340,37 +342,34 @@ public class MapsActivity extends AppCompatActivity
     }
 
 
-
-
-
     //Update picture URIS to make deleting of pictures possible
-    public static void updatePictureUris(int id , String pictureUris){
+    public static void updatePicturePaths(int id, String picturePaths) {
         String rowID = Integer.toString(id);
         ContentValues cv = new ContentValues();
-        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, pictureUris);
-        mDb.update(PlacesContract.PlacesEntry.TABLE_NAME, cv, PlacesContract.PlacesEntry._ID +  "= ?", new String[]{rowID} );
+        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, picturePaths);
+        mDb.update(PlacesContract.PlacesEntry.TABLE_NAME, cv, PlacesContract.PlacesEntry._ID + "= ?", new String[]{rowID});
     }
 
     //Get the uris of the pictures for a single city
-    public static ArrayList<Uri> getPictureUris(int id){
-        ArrayList<Uri> uriArrayList = new ArrayList<>();
+    public static ArrayList<String> getPicturePaths(int id) {
+        ArrayList<String> pathArrayList = new ArrayList<>();
         String rowID = Integer.toString(id);
         Cursor cursor = mDb.rawQuery("SELECT * FROM " + PlacesContract.PlacesEntry.TABLE_NAME + " WHERE "
-                + PlacesContract.PlacesEntry._ID + "=?", new String[]{rowID});
+                + PlacesContract.PlacesEntry._ID + " = ?", new String[]{rowID});
         try {
             cursor.moveToFirst();
         } catch (Exception e) {
             e.printStackTrace();
         }
         String pictureUriString = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
-        if(pictureUriString!=null){
-            List<String> uriStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0 ; i<uriStringsArrayList.size(); i++){
-                Uri uri = Uri.parse(uriStringsArrayList.get(i));
-                uriArrayList.add(uri);
+        if (pictureUriString != null) {
+            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
+            for (int i = 0; i < pathStringsArrayList.size(); i++) {
+                String path = pathStringsArrayList.get(i);
+                pathArrayList.add(path);
             }
         }
-        return uriArrayList;
+        return pathArrayList;
     }
 
     @Override
@@ -414,18 +413,20 @@ public class MapsActivity extends AppCompatActivity
 
                 mCursor = getAllPlaces();
                 retrieveMarkers(mCursor);
-                for (int i = 0; i < markerHashMap.size(); i++) {
-                    MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
-                    if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
-                        Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
-                        View sb_duplicateView = duplicate.getView();
-                        TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
-                        tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
-                        duplicate.show();
-                        return;
-                    }
+                if(markerHashMap.size()!=0){
+                    for (int i = 0; i < markerHashMap.size(); i++) {
+                        MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
+                        if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
+                            Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
+                            View sb_duplicateView = duplicate.getView();
+                            TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
+                            tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                            sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
+                            duplicate.show();
+                            return;
+                        }
 
+                    }
                 }
 
 
@@ -453,6 +454,8 @@ public class MapsActivity extends AppCompatActivity
         }
 
     }
+
+
 
     @Override
     public void onMarkerDragStart(Marker marker) {

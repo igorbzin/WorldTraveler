@@ -2,9 +2,11 @@ package com.example.styledmap;
 
 import android.content.ClipData;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -25,14 +27,18 @@ public class MarkerActivity extends AppCompatActivity {
 
 
     private Button mBtnAddImage;
-    private ArrayList<Uri> mArrayUri;
+    private ArrayList<String> mPicturePathsAL ;
     private RecyclerView mPicturesRV;
     private InfoWindowRVAdapter mAdapter;
-    private String mUriString = "";
+    private String mPathString = "";
+    private int mCurrentMarkerID;
     public final static int PICK_PHOTO_CODE = 11;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+        Intent mIntent = getIntent();
+        mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
 
         //Inflate layout, set display metrics
         super.onCreate(savedInstanceState);
@@ -47,11 +53,13 @@ public class MarkerActivity extends AppCompatActivity {
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
 
+        mPicturePathsAL = new ArrayList<>();
+
         mPicturesRV = (RecyclerView) findViewById(R.id.recyclerView);
-        mArrayUri = new ArrayList<>();
-        mArrayUri = MapsActivity.getPictureUris(MapsActivity.currentMarkerID);
-        if(mArrayUri != null){
-            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mArrayUri);
+        mPicturePathsAL = MapsActivity.getPicturePaths(mCurrentMarkerID);
+
+        if(mPicturePathsAL != null){
+            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mPicturePathsAL);
             GridLayoutManager layoutManager = new GridLayoutManager(MarkerActivity.this, 2);
             mPicturesRV.setHasFixedSize(true);
             mPicturesRV.setLayoutManager(layoutManager);
@@ -82,27 +90,46 @@ public class MarkerActivity extends AppCompatActivity {
             for (int i = 0; i < mClipData.getItemCount(); i++) {
                 ClipData.Item item = mClipData.getItemAt(i);
                 Uri uri = item.getUri();
-                mArrayUri.add(uri);
+                String picturePath = getRealPathFromURI(uri);
+                mPicturePathsAL.add(picturePath);
             }
-            new FetchImagesTask().execute(mArrayUri);
+            new FetchImagesTask().execute(mPicturePathsAL);
 
-            makeUriString();
-            MapsActivity.updatePictureUris(MapsActivity.currentMarkerID, mUriString);
+            makePathString();
+            MapsActivity.updatePicturePaths(mCurrentMarkerID, mPathString);
         }
 
     }
 
-    private void makeUriString(){
-        for (int i = 0; i < mArrayUri.size(); i++){
-            mUriString += mArrayUri.get(i).toString() + "," ;
+
+    private void makePathString(){
+        for (int i = 0; i < mPicturePathsAL.size(); i++){
+            mPathString += mPicturePathsAL.get(i).toString() + "," ;
         }
     }
 
-    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
+
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+    }
+
+
+
+    public class FetchImagesTask extends AsyncTask<ArrayList<String>, Void, InfoWindowRVAdapter> {
 
         @Override
-        protected InfoWindowRVAdapter doInBackground(ArrayList<Uri>... pictureUris) {
-            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mArrayUri);
+        protected InfoWindowRVAdapter doInBackground(ArrayList<String>... picturePaths) {
+            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPicturePathsAL);
             return mAdapter;
         }
 
@@ -113,5 +140,7 @@ public class MarkerActivity extends AppCompatActivity {
             mPicturesRV.setAdapter(mAdapter);
         }
     }
+
+
 }
 
