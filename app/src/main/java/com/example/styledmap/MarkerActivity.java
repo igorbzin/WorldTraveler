@@ -2,18 +2,19 @@ package com.example.styledmap;
 
 import android.content.ClipData;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import java.io.IOException;
+import com.example.styledmap.Adapters.InfoWindowRVAdapter;
+
 import java.util.ArrayList;
 
 /**
@@ -25,7 +26,9 @@ public class MarkerActivity extends AppCompatActivity {
 
     private Button mBtnAddImage;
     private ArrayList<Uri> mArrayUri;
-    private ArrayList<Bitmap> mBitmapsSelected;
+    private RecyclerView mPicturesRV;
+    private InfoWindowRVAdapter mAdapter;
+    private String mUriString = "";
     public final static int PICK_PHOTO_CODE = 11;
 
     @Override
@@ -44,6 +47,18 @@ public class MarkerActivity extends AppCompatActivity {
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
 
+        mPicturesRV = (RecyclerView) findViewById(R.id.recyclerView);
+        mArrayUri = new ArrayList<>();
+        mArrayUri = MapsActivity.getPictureUris(MapsActivity.currentMarkerID);
+        if(mArrayUri != null){
+            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mArrayUri);
+            GridLayoutManager layoutManager = new GridLayoutManager(MarkerActivity.this, 2);
+            mPicturesRV.setHasFixedSize(true);
+            mPicturesRV.setLayoutManager(layoutManager);
+            mPicturesRV.setAdapter(adapter);
+        }
+
+
         mBtnAddImage = (Button) findViewById(R.id.btn_add_images);
         mBtnAddImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,32 +75,43 @@ public class MarkerActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        try {
-            if (data.getClipData() != null) {
+        if (data.getClipData() != null) {
 
-                ClipData mClipData = null;
-                mClipData = data.getClipData();
+            ClipData mClipData = data.getClipData();
 
-                mArrayUri = new ArrayList<>();
-                mBitmapsSelected = new ArrayList<>();
-                for (int i = 0; i < mClipData.getItemCount(); i++) {
-                    ClipData.Item item = mClipData.getItemAt(i);
-                    Uri uri = item.getUri();
-                    mArrayUri.add(uri);
-
-                    Uri photoUri = data.getData();
-                    // !! You may need to resize the image if it's too large
-                    Bitmap bitmap = null;
-                    try {
-                        bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    mBitmapsSelected.add(bitmap);
-                }
+            for (int i = 0; i < mClipData.getItemCount(); i++) {
+                ClipData.Item item = mClipData.getItemAt(i);
+                Uri uri = item.getUri();
+                mArrayUri.add(uri);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            new FetchImagesTask().execute(mArrayUri);
+
+            makeUriString();
+            MapsActivity.updatePictureUris(MapsActivity.currentMarkerID, mUriString);
+        }
+
+    }
+
+    private void makeUriString(){
+        for (int i = 0; i < mArrayUri.size(); i++){
+            mUriString += mArrayUri.get(i).toString() + "," ;
+        }
+    }
+
+    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
+
+        @Override
+        protected InfoWindowRVAdapter doInBackground(ArrayList<Uri>... pictureUris) {
+            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mArrayUri);
+            return mAdapter;
+        }
+
+        @Override
+        protected void onPostExecute(InfoWindowRVAdapter adapter) {
+            GridLayoutManager gridLayoutManager = new GridLayoutManager(MarkerActivity.this, 2);
+            mPicturesRV.setLayoutManager(gridLayoutManager);
+            mPicturesRV.setAdapter(mAdapter);
         }
     }
 }
+

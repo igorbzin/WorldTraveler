@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 startActivity(intent);
                 finish();
-            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 AlertDialog.Builder locationError = new AlertDialog.Builder(MainActivity.this);
                 locationError.setTitle(R.string.dialog_title_permission_denied);
                 locationError.setMessage(R.string.dialog_text_permission_denied);
@@ -84,13 +84,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
         } else { //permission is automatically granted on sdk<23 upon installation
             Log.v("PERMISSION", "Permission is granted");
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        startActivity(new Intent(MainActivity.this, MapsActivity.class));
-                        MainActivity.this.finish();
-                    }
-                }, SPLASH_TIME_OUT);
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    startActivity(new Intent(MainActivity.this, MapsActivity.class));
+                    MainActivity.this.finish();
+                }
+            }, SPLASH_TIME_OUT);
             return;
         }
 

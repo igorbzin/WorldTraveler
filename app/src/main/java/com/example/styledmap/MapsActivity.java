@@ -15,6 +15,7 @@ import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
@@ -52,6 +53,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -61,8 +63,12 @@ import java.util.Map;
  * A styled map using JSON styles from a raw resource.
  */
 public class MapsActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+        implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener {
 
+
+    public static SQLiteDatabase mDb;
+    public static int currentMarkerID;
+    private String mStringUris;
     private GoogleMap mMap;
     private ArrayList<MarkerOptions> markers = new ArrayList<>();
     private Geocoder gcd;
@@ -70,7 +76,6 @@ public class MapsActivity extends AppCompatActivity
     private LatLng mLatLong;
     private String city;
     private Location location;
-    private SQLiteDatabase mDb;
     private TextView tv_delete;
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private Cursor mCursor;
@@ -205,6 +210,9 @@ public class MapsActivity extends AppCompatActivity
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
+                String string_id = marker.getSnippet();
+                int id = Integer.parseInt(string_id);
+                currentMarkerID = id;
                 marker.showInfoWindow();
                 return true;
             }
@@ -212,52 +220,7 @@ public class MapsActivity extends AppCompatActivity
 
 
         //Set onclicklistener for Marker dragging to delete it
-        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
-            @Override
-            public void onMarkerDragStart(Marker marker) {
-                tv_delete.setTextColor(Color.BLACK);
-
-                tv_delete.startAnimation(mStartFadeInAnimation);
-                mAddButton.startAnimation(mStartFadeOutAnimation);
-            }
-
-            @Override
-            public void onMarkerDrag(Marker marker) {
-                LatLng position = marker.getPosition();
-                Projection projection = mMap.getProjection();
-                Point screenPosition = projection.toScreenLocation(position);
-                int tv_delete_top_boundry = tv_delete.getTop();
-                if (screenPosition.y >= tv_delete_top_boundry) {
-                    tv_delete.setTextColor(Color.RED);
-                } else {
-                    tv_delete.setTextColor(Color.BLACK);
-                }
-
-
-            }
-
-            @Override
-            public void onMarkerDragEnd(Marker marker) {
-                String string_id = marker.getSnippet();
-                int id = Integer.parseInt(string_id);
-                LatLng position = marker.getPosition();
-                Projection projection = mMap.getProjection();
-                Point screenPosition = projection.toScreenLocation(position);
-                int tv_delete_top_boundry = tv_delete.getTop();
-
-                if (screenPosition.y >= tv_delete_top_boundry) {
-                    boolean test = removeMarker(id);
-                    marker.remove();
-                }
-                mMap.clear();
-                mCursor = getAllPlaces();
-                retrieveMarkers(mCursor);
-                setMarkers();
-
-                tv_delete.startAnimation(mStartFadeOutAnimation);
-                mAddButton.startAnimation(mStartFadeInAnimation);
-            }
-        });
+        mMap.setOnMarkerDragListener(MapsActivity.this);
 
 
         //Configure custom infowindow through InfoWindowAdapter
@@ -313,7 +276,7 @@ public class MapsActivity extends AppCompatActivity
 
 
     // Database function for retrieving current database data in a cursor
-    private Cursor getAllPlaces() {
+    public Cursor getAllPlaces() {
         return mDb.query(
                 PlacesContract.PlacesEntry.TABLE_NAME,
                 null,
@@ -327,22 +290,23 @@ public class MapsActivity extends AppCompatActivity
 
 
     //Function to add new places into the database
-    private long addNewPlace(String name, double latitude, double longitude) {
+    public long addNewPlace(String name, double latitude, double longitude, String picturesUris) {
         ContentValues cv = new ContentValues();
         cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, name);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LATITUDE, latitude);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LONGITUDE, longitude);
+        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, picturesUris);
         return mDb.insert(PlacesContract.PlacesEntry.TABLE_NAME, null, cv);
     }
 
     //Remove marker from db
-    private boolean removeMarker(int id) {
+    public boolean removeMarker(int id) {
         return mDb.delete(PlacesContract.PlacesEntry.TABLE_NAME, PlacesContract.PlacesEntry._ID + "=" + id, null) > 0;
     }
 
 
     //Function to set all markers retrieved from database
-    private void setMarkers() {
+    public void setMarkers() {
         ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
 
         for (int i = 0; i < markerOptionsList.size(); i++) {
@@ -353,7 +317,7 @@ public class MapsActivity extends AppCompatActivity
 
 
     //Retrieve all markers from database
-    private void retrieveMarkers(Cursor cursor) {
+    public void retrieveMarkers(Cursor cursor) {
         markers.clear();
         markerHashMap.clear();
         cursor = getAllPlaces();
@@ -365,12 +329,48 @@ public class MapsActivity extends AppCompatActivity
                 double cLatitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LATITUDE));
                 double cLongitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LONGITUDE));
                 int cId = cursor.getInt(cursor.getColumnIndex(PlacesContract.PlacesEntry._ID));
+                String cPictureUris = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
                 LatLng cLatLng = new LatLng(cLatitude, cLongitude);
                 MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
                 markerHashMap.put(cId, cMarkerOptions);
+                mStringUris = cPictureUris;
             }
         }
 
+    }
+
+
+
+
+
+    //Update picture URIS to make deleting of pictures possible
+    public static void updatePictureUris(int id , String pictureUris){
+        String rowID = Integer.toString(id);
+        ContentValues cv = new ContentValues();
+        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, pictureUris);
+        mDb.update(PlacesContract.PlacesEntry.TABLE_NAME, cv, PlacesContract.PlacesEntry._ID +  "= ?", new String[]{rowID} );
+    }
+
+    //Get the uris of the pictures for a single city
+    public static ArrayList<Uri> getPictureUris(int id){
+        ArrayList<Uri> uriArrayList = new ArrayList<>();
+        String rowID = Integer.toString(id);
+        Cursor cursor = mDb.rawQuery("SELECT * FROM " + PlacesContract.PlacesEntry.TABLE_NAME + " WHERE "
+                + PlacesContract.PlacesEntry._ID + "=?", new String[]{rowID});
+        try {
+            cursor.moveToFirst();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String pictureUriString = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
+        if(pictureUriString!=null){
+            List<String> uriStringsArrayList = Arrays.asList(pictureUriString.split(","));
+            for (int i = 0 ; i<uriStringsArrayList.size(); i++){
+                Uri uri = Uri.parse(uriStringsArrayList.get(i));
+                uriArrayList.add(uri);
+            }
+        }
+        return uriArrayList;
     }
 
     @Override
@@ -443,7 +443,7 @@ public class MapsActivity extends AppCompatActivity
                 mMap.addMarker(currentMarker);
 
                 //Add place into database
-                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
+                addNewPlace(city, mLatLong.latitude, mLatLong.longitude, mStringUris);
 
 
             }
@@ -451,7 +451,51 @@ public class MapsActivity extends AppCompatActivity
                 //Write your code if there's no result
             }
         }
+
     }
 
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+        tv_delete.setTextColor(Color.BLACK);
+        tv_delete.startAnimation(mStartFadeInAnimation);
+        mAddButton.startAnimation(mStartFadeOutAnimation);
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+        LatLng position = marker.getPosition();
+        Projection projection = mMap.getProjection();
+        Point screenPosition = projection.toScreenLocation(position);
+        int tv_delete_top_boundry = tv_delete.getTop();
+        if (screenPosition.y >= tv_delete_top_boundry) {
+            tv_delete.setTextColor(Color.RED);
+        } else {
+            tv_delete.setTextColor(Color.BLACK);
+        }
+
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        String string_id = marker.getSnippet();
+        int id = Integer.parseInt(string_id);
+        LatLng position = marker.getPosition();
+        Projection projection = mMap.getProjection();
+        Point screenPosition = projection.toScreenLocation(position);
+        int tv_delete_top_boundry = tv_delete.getTop();
+
+        if (screenPosition.y >= tv_delete_top_boundry) {
+            boolean test = removeMarker(id);
+            marker.remove();
+        }
+        mMap.clear();
+        mCursor = getAllPlaces();
+        retrieveMarkers(mCursor);
+        setMarkers();
+
+        tv_delete.startAnimation(mStartFadeOutAnimation);
+        mAddButton.startAnimation(mStartFadeInAnimation);
+    }
 
 }

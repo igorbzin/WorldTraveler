@@ -13,6 +13,7 @@ public class PlacesContract  {
         public static final String COLUMN_CITY = "city";
         public static final String COLUMN_LATITUDE = "latitude";
         public static final String COLUMN_LONGITUDE = "longitude";
+        public static final String COLUMN_PICTURE_URIS = "picture_uris";
     }
 
 }

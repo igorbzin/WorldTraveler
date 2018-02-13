@@ -24,7 +24,8 @@ public class PlacesDBHelper extends SQLiteOpenHelper {
                 PlacesContract.PlacesEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 PlacesContract.PlacesEntry.COLUMN_CITY + " TEXT NOT NULL, " +
                 PlacesContract.PlacesEntry.COLUMN_LATITUDE + " DOUBLE NOT NULL, " +
-                PlacesContract.PlacesEntry.COLUMN_LONGITUDE + " DOUBLE NOT NULL" +
+                PlacesContract.PlacesEntry.COLUMN_LONGITUDE + " DOUBLE NOT NULL, " +
+                PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS + " TEXT " +
                 "); ";
         db.execSQL(sql_create_table);
     }

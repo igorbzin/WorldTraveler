@@ -20,4 +20,7 @@
     <string name="placeautocomplete_hint">Search for places you have visited</string>
     <string name="snackbar_duplicate">You already added this place!</string>
     <string name="snackbar_place_added">You succesfully added this place!</string>
+
+
+    <string name="btn_add_image">Add image</string>
 </resources>
