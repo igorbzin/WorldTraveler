@@ -465,7 +465,6 @@ public class MapsActivity extends AppCompatActivity
         Cursor cursor = getAllPlaces();
         retrieveMarkers(cursor);
         setMarkers();
-        
     }
 
 
