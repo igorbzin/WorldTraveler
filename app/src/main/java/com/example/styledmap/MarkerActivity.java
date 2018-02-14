@@ -27,10 +27,10 @@ public class MarkerActivity extends AppCompatActivity {
 
 
     private Button mBtnAddImage;
-    private ArrayList<String> mPicturePathsAL ;
+    private ArrayList<Uri> mPictureUris;
     private RecyclerView mPicturesRV;
     private InfoWindowRVAdapter mAdapter;
-    private String mPathString = "";
+    private String mUriString = "";
     private int mCurrentMarkerID;
     public final static int PICK_PHOTO_CODE = 11;
 
@@ -53,13 +53,13 @@ public class MarkerActivity extends AppCompatActivity {
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
 
-        mPicturePathsAL = new ArrayList<>();
+        mPictureUris = new ArrayList<>();
 
         mPicturesRV = (RecyclerView) findViewById(R.id.recyclerView);
-        mPicturePathsAL = MapsActivity.getPicturePaths(mCurrentMarkerID);
+        mPictureUris = MapsActivity.getPicturePaths(mCurrentMarkerID);
 
-        if(mPicturePathsAL != null){
-            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mPicturePathsAL);
+        if(mPictureUris != null){
+            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris);
             GridLayoutManager layoutManager = new GridLayoutManager(MarkerActivity.this, 2);
             mPicturesRV.setHasFixedSize(true);
             mPicturesRV.setLayoutManager(layoutManager);
@@ -90,21 +90,20 @@ public class MarkerActivity extends AppCompatActivity {
             for (int i = 0; i < mClipData.getItemCount(); i++) {
                 ClipData.Item item = mClipData.getItemAt(i);
                 Uri uri = item.getUri();
-                String picturePath = getRealPathFromURI(uri);
-                mPicturePathsAL.add(picturePath);
+                mPictureUris.add(uri);
             }
-            new FetchImagesTask().execute(mPicturePathsAL);
+            new FetchImagesTask().execute(mPictureUris);
 
             makePathString();
-            MapsActivity.updatePicturePaths(mCurrentMarkerID, mPathString);
+            MapsActivity.updatePicturePaths(mCurrentMarkerID, mUriString);
         }
 
     }
 
 
     private void makePathString(){
-        for (int i = 0; i < mPicturePathsAL.size(); i++){
-            mPathString += mPicturePathsAL.get(i).toString() + "," ;
+        for (int i = 0; i < mPictureUris.size(); i++){
+            mUriString += mPictureUris.get(i).toString() + "," ;
         }
     }
 
@@ -125,11 +124,11 @@ public class MarkerActivity extends AppCompatActivity {
 
 
 
-    public class FetchImagesTask extends AsyncTask<ArrayList<String>, Void, InfoWindowRVAdapter> {
+    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
 
         @Override
-        protected InfoWindowRVAdapter doInBackground(ArrayList<String>... picturePaths) {
-            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPicturePathsAL);
+        protected InfoWindowRVAdapter doInBackground(ArrayList<Uri>... picturePaths) {
+            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris);
             return mAdapter;
         }
 

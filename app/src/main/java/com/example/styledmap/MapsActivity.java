@@ -226,12 +226,8 @@ public class MapsActivity extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-
-                Cursor cursor = getAllPlaces();
-                retrieveMarkers(cursor);
-
-                String test = marker.getId();
-                int id = Integer.parseInt(marker.getSnippet());
+                String markerId = marker.getSnippet();
+                int id =Integer.valueOf( markerId) ;
                 Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
                 intent.putExtra("MarkerID", id);
                 startActivity(intent);
@@ -342,6 +338,9 @@ public class MapsActivity extends AppCompatActivity
     }
 
 
+
+
+
     //Update picture URIS to make deleting of pictures possible
     public static void updatePicturePaths(int id, String picturePaths) {
         String rowID = Integer.toString(id);
@@ -351,8 +350,8 @@ public class MapsActivity extends AppCompatActivity
     }
 
     //Get the uris of the pictures for a single city
-    public static ArrayList<String> getPicturePaths(int id) {
-        ArrayList<String> pathArrayList = new ArrayList<>();
+    public static ArrayList<Uri> getPicturePaths(int id) {
+        ArrayList<Uri> pathArrayList = new ArrayList<>();
         String rowID = Integer.toString(id);
         Cursor cursor = mDb.rawQuery("SELECT * FROM " + PlacesContract.PlacesEntry.TABLE_NAME + " WHERE "
                 + PlacesContract.PlacesEntry._ID + " = ?", new String[]{rowID});
@@ -366,7 +365,7 @@ public class MapsActivity extends AppCompatActivity
             List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
             for (int i = 0; i < pathStringsArrayList.size(); i++) {
                 String path = pathStringsArrayList.get(i);
-                pathArrayList.add(path);
+                pathArrayList.add(Uri.parse(path));
             }
         }
         return pathArrayList;
@@ -441,10 +440,16 @@ public class MapsActivity extends AppCompatActivity
                         .position(mLatLong)
                         .title(city)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+
+
                 mMap.addMarker(currentMarker);
 
                 //Add place into database
+
                 addNewPlace(city, mLatLong.latitude, mLatLong.longitude, mStringUris);
+                refreshMap();
+
+
 
 
             }
@@ -453,6 +458,13 @@ public class MapsActivity extends AppCompatActivity
             }
         }
 
+    }
+
+    private void refreshMap(){
+        mMap.clear();
+        Cursor cursor = getAllPlaces();
+        retrieveMarkers(cursor);
+        setMarkers();
     }
 
 
@@ -492,10 +504,8 @@ public class MapsActivity extends AppCompatActivity
             boolean test = removeMarker(id);
             marker.remove();
         }
-        mMap.clear();
-        mCursor = getAllPlaces();
-        retrieveMarkers(mCursor);
-        setMarkers();
+
+        refreshMap();
 
         tv_delete.startAnimation(mStartFadeOutAnimation);
         mAddButton.startAnimation(mStartFadeInAnimation);

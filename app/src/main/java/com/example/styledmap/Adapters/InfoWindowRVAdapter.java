@@ -1,22 +1,17 @@
 package com.example.styledmap.Adapters;
 
-import android.content.ContentResolver;
+
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.styledmap.R;
-import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -26,10 +21,10 @@ import java.util.ArrayList;
 public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapter.ImageViewHolder> {
 
     private Context mContext;
-    private ArrayList<String> mPicturePaths;
+    private ArrayList<Uri> mPicturePaths;
 
 
-    public InfoWindowRVAdapter(Context c, ArrayList<String> picturePaths){
+    public InfoWindowRVAdapter(Context c, ArrayList<Uri> picturePaths){
         mContext = c;
         mPicturePaths= picturePaths;
     }
@@ -42,9 +37,7 @@ public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapte
 
     @Override
     public void onBindViewHolder(InfoWindowRVAdapter.ImageViewHolder holder, int position) {
-        Picasso.with(mContext).load(Uri.parse(mPicturePaths.get(position))).fit().into(holder.selectedPicture);
-
-
+        Glide.with(mContext).load(mPicturePaths.get(position)).into(holder.selectedPicture);
     }
 
     @Override

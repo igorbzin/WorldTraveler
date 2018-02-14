@@ -35,6 +35,9 @@ dependencies {
     compile 'com.google.android.gms:play-services-location:11.8.0'
     compile 'com.google.android.gms:play-services-places:11.8.0'
     compile 'com.android.support:recyclerview-v7:25.4.0'
-    compile 'com.squareup.picasso:picasso:2.5.2'
+    implementation ("com.github.bumptech.glide:glide:4.6.1") {
+        exclude group: "com.android.support"
+    }
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.6.1'
     testCompile 'junit:junit:4.12'
 }
