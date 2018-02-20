@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        requestPermissions();
+        permissionsRequest();
     }
 
 
@@ -41,9 +41,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 startActivity(intent);
-                finish();
+                MainActivity.this.finish();
             } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
-                requestPermissions();
+                permissionsRequest();
             }
 
         } else {
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
 
-    public void requestPermissions() {
+    public void permissionsRequest() {
 
         if (Build.VERSION.SDK_INT >= MARSHMALLOW) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 }, SPLASH_TIME_OUT);
                 return;
             } else {
-                ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSIONS);
+                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSIONS);
                 return;
             }
         } else { //permission is automatically granted on sdk<23 upon installation

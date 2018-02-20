@@ -66,7 +66,6 @@ public class MapsActivity extends AppCompatActivity
 
 
     public static SQLiteDatabase mDb;
-    private String mStringUris;
     private GoogleMap mMap;
     private ArrayList<MarkerOptions> markers = new ArrayList<>();
     private Geocoder gcd;
@@ -83,6 +82,7 @@ public class MapsActivity extends AppCompatActivity
     private Button mAddButton;
     private Animation mStartFadeInAnimation;
     private Animation mStartFadeOutAnimation;
+    private int mCameraPosition;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
@@ -185,6 +185,9 @@ public class MapsActivity extends AppCompatActivity
         mStartFadeOutAnimation.setFillAfter(true);
 
 
+        //camera position
+        mCameraPosition = 0;
+
     }
 
 
@@ -263,13 +266,19 @@ public class MapsActivity extends AppCompatActivity
 
 
         // Position the map's camera
-        if (location != null) {
+        if(mCameraPosition == 0){
             CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(mLatLong)      // Sets the center of the map to location user
-                    .zoom(3)                   // Sets the zoom
+                    .target(new LatLng(44.66278, 20.93))      // Sets the center of the map to location user
+                    .zoom(1)                   // Sets the zoom
                     .build();                   // Creates a CameraPosition from the builder
-            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            mCameraPosition = 1;
+
         }
+
+
+
+
     }
 
 
@@ -288,12 +297,12 @@ public class MapsActivity extends AppCompatActivity
 
 
     //Function to add new places into the database
-    public long addNewPlace(String name, double latitude, double longitude, String picturesUris) {
+    public long addNewPlace(String name, double latitude, double longitude) {
         ContentValues cv = new ContentValues();
         cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, name);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LATITUDE, latitude);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LONGITUDE, longitude);
-        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, picturesUris);
+        cv.putNull(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS);
         return mDb.insert(PlacesContract.PlacesEntry.TABLE_NAME, null, cv);
     }
 
@@ -331,7 +340,6 @@ public class MapsActivity extends AppCompatActivity
                 LatLng cLatLng = new LatLng(cLatitude, cLongitude);
                 MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
                 markerHashMap.put(cId, cMarkerOptions);
-                mStringUris = cPictureUris;
             }
         }
 
@@ -348,6 +356,7 @@ public class MapsActivity extends AppCompatActivity
         cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, picturePaths);
         mDb.update(PlacesContract.PlacesEntry.TABLE_NAME, cv, PlacesContract.PlacesEntry._ID + "= ?", new String[]{rowID});
     }
+
 
     //Get the uris of the pictures for a single city
     public static ArrayList<Uri> getPicturePaths(int id) {
@@ -446,16 +455,25 @@ public class MapsActivity extends AppCompatActivity
 
                 //Add place into database
 
-                addNewPlace(city, mLatLong.latitude, mLatLong.longitude, mStringUris);
+                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
                 refreshMap();
+
+
 
 
 
 
             }
             if (resultCode == Activity.RESULT_CANCELED) {
-                //Write your code if there's no result
+                Snackbar noPlaceAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
+                View sb_noPlaceAddedView = noPlaceAdded.getView();
+                sb_noPlaceAddedView.setBackgroundColor(getColor(R.color.colorAccent));
+                TextView tv_sb_noPlaceAdded = (TextView) sb_noPlaceAddedView.findViewById(android.support.design.R.id.snackbar_text);
+                tv_sb_noPlaceAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+
             }
+
+            onMapReady(mMap);
         }
 
     }

@@ -2,11 +2,9 @@ package com.example.styledmap;
 
 import android.content.ClipData;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,14 +14,13 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 import com.example.styledmap.Adapters.InfoWindowRVAdapter;
-
 import java.util.ArrayList;
 
 /**
  * Created by igorb on 20.12.2017.
  */
 
-public class MarkerActivity extends AppCompatActivity {
+public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAdapter.InfoWindowRVAdapterOnClickHandler {
 
 
     private Button mBtnAddImage;
@@ -54,12 +51,11 @@ public class MarkerActivity extends AppCompatActivity {
 
 
         mPictureUris = new ArrayList<>();
-
         mPicturesRV = (RecyclerView) findViewById(R.id.recyclerView);
         mPictureUris = MapsActivity.getPicturePaths(mCurrentMarkerID);
 
         if(mPictureUris != null){
-            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris);
+            InfoWindowRVAdapter adapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
             GridLayoutManager layoutManager = new GridLayoutManager(MarkerActivity.this, 2);
             mPicturesRV.setHasFixedSize(true);
             mPicturesRV.setLayoutManager(layoutManager);
@@ -83,52 +79,54 @@ public class MarkerActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (data.getClipData() != null) {
+        if (data != null) {
 
-            ClipData mClipData = data.getClipData();
+            if(data.getClipData() != null){
 
-            for (int i = 0; i < mClipData.getItemCount(); i++) {
-                ClipData.Item item = mClipData.getItemAt(i);
-                Uri uri = item.getUri();
-                mPictureUris.add(uri);
+                ClipData mClipData = data.getClipData();
+
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
+                    ClipData.Item item = mClipData.getItemAt(i);
+                    Uri uri = item.getUri();
+                    mPictureUris.add(uri);
+                }
+
+            } else if(data.getData() != null){
+                Uri pictureUri =  data.getData();
+                mPictureUris.add(pictureUri);
             }
+
+
             new FetchImagesTask().execute(mPictureUris);
-
-            makePathString();
-            MapsActivity.updatePicturePaths(mCurrentMarkerID, mUriString);
+            MapsActivity.updatePicturePaths(mCurrentMarkerID, makePathString());
         }
 
     }
 
 
-    private void makePathString(){
+
+    private String makePathString(){
+        String uriString = "";
         for (int i = 0; i < mPictureUris.size(); i++){
-            mUriString += mPictureUris.get(i).toString() + "," ;
+            uriString += mPictureUris.get(i).toString() + "," ;
         }
+        return uriString;
     }
 
-
-    private String getRealPathFromURI(Uri contentURI) {
-        String result;
-        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) { // Source is Dropbox or other similar local file path
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
+    @Override
+    public void onClick(Uri uri) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setDataAndType(uri, "image/*");
+        startActivity(intent);
     }
-
 
 
     public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
 
         @Override
         protected InfoWindowRVAdapter doInBackground(ArrayList<Uri>... picturePaths) {
-            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris);
+            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
             return mAdapter;
         }
 

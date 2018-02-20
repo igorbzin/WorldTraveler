@@ -20,18 +20,24 @@ import java.util.ArrayList;
 
 public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapter.ImageViewHolder> {
 
+    public final InfoWindowRVAdapterOnClickHandler mClickHandler;
     private Context mContext;
     private ArrayList<Uri> mPicturePaths;
 
 
-    public InfoWindowRVAdapter(Context c, ArrayList<Uri> picturePaths){
+    public InfoWindowRVAdapter(Context c, ArrayList<Uri> picturePaths, InfoWindowRVAdapterOnClickHandler clickHandler){
+        mClickHandler = clickHandler;
         mContext = c;
         mPicturePaths= picturePaths;
     }
 
+    public interface InfoWindowRVAdapterOnClickHandler{
+        void onClick(Uri uri);
+    }
+
     @Override
     public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.rv_item,parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.rv_item, parent, false);
         return new ImageViewHolder(v);
     }
 
@@ -47,7 +53,7 @@ public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapte
 
 
 
-    public class ImageViewHolder extends RecyclerView.ViewHolder{
+    public class ImageViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         public ImageView selectedPicture;
 
@@ -55,10 +61,16 @@ public class InfoWindowRVAdapter extends RecyclerView.Adapter<InfoWindowRVAdapte
         public ImageViewHolder(View itemView){
             super(itemView);
             selectedPicture = (ImageView) itemView.findViewById(R.id.rv_item_image);
-
+            itemView.setOnClickListener(this);
         }
 
 
+        @Override
+        public void onClick(View v) {
+            int position = getAdapterPosition();
+            Uri uri = mPicturePaths.get(position);
+            mClickHandler.onClick(uri);
+        }
     }
 
 
