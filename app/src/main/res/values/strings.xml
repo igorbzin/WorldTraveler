@@ -1,11 +1,22 @@
 <resources>
     <string name="app_name">World Traveler</string>
     <string name="title_activity_maps">World Traveler</string>
-    <string name="key">hidden</string>
+    <string name="key">AIzaSyBhdQiIgcXjHmDPzlctXxQd90L33oijX50</string>
 
 
-    <!--
-    -->
+
+
+
+    <!--AppIntro-->
+    <string name="ai_welcome">Welcome!</string>
+    <string name="ai_welcome_text">Track the cities you have visited and add your favorite photos of your journies, on a flexible, movable world map, without tedious lists. Please keep in mind, this is only our
+    first version, you can read more about future plans in the about section located in the drawer accessed by swiping from the left side of the screen. </string>
+    <string name="ai_add_city_title">Add cities</string>
+    <string name="ai_add_city_text">You can add cities by pressing the plus icon located in the bottom right corner of the screen. </string>
+    <string name="ai_add_photos_title">Adding and deleting photos</string>
+    <string name="ai_add_photos_text">Add photos from your phone by pressing the "Add Images" button. You can also delete them by pressing "Delete Images" and then pressing on the cross of each individual photo you wish to delete.</string>
+
+
     <string name="tv_delete">Delete</string>
 
     <string name="open_drawer">Open</string>
@@ -20,7 +31,9 @@
     <string name="placeautocomplete_hint">Search for places you have visited</string>
     <string name="snackbar_duplicate">You already added this place!</string>
     <string name="snackbar_place_added">You succesfully added this place!</string>
+    <string name="snackbar_no_place_added"> You didnt add any city!</string>
 
 
     <string name="btn_add_image">Add image</string>
+    <string name="btn_delete_image">Delete image</string>
 </resources>
