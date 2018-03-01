@@ -21,7 +21,7 @@ import android.util.Log;
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final int REQUEST_PERMISSIONS = 100;
-    private static int SPLASH_TIME_OUT = 1000;
+    private static int SPLASH_TIME_OUT = 1500;
     private static final int MARSHMALLOW = 23;
 
 
@@ -48,7 +48,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
 
         } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            finish();
         }
     }
 

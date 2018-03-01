@@ -17,6 +17,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -82,6 +83,8 @@ public class MapsActivity extends AppCompatActivity
     private Button mAddButton;
     private Animation mStartFadeInAnimation;
     private Animation mStartFadeOutAnimation;
+    private TextView mTV_number_of_cities_visited;
+    private int mNumberOfCities;
     private int mCameraPosition;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
@@ -95,25 +98,28 @@ public class MapsActivity extends AppCompatActivity
         setContentView(R.layout.activity_maps);
 
 
-        mActionBar = (Toolbar) findViewById(R.id.tb_actionbar);
+        mActionBar = findViewById(R.id.tb_actionbar);
         setSupportActionBar(mActionBar);
         mActionBar.setBackgroundColor(ContextCompat.getColor(MapsActivity.this, R.color.colorPrimaryDark));
-        mActionBar.setTitleTextColor(ContextCompat.getColor(MapsActivity.this, R.color.textColor));
+        mActionBar.setTitleTextColor(ContextCompat.getColor(MapsActivity.this, R.color.textWhite));
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(MapsActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
         mDrawerLayout.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
+        NavigationView navigationView =  findViewById(R.id.nav_view);
+        View headerView = navigationView.getHeaderView(0);
+        mTV_number_of_cities_visited = headerView.findViewById(R.id.tv_number_of_cities_visited);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //Set up views
-        tv_delete = (TextView) findViewById(R.id.tv_delete_marker);
+        tv_delete = findViewById(R.id.tv_delete_marker);
 
 
         //Set up add button
 
-        mAddButton = (Button) findViewById(R.id.btn_add_place);
+        mAddButton = findViewById(R.id.btn_add_place);
         mAddButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -178,6 +184,11 @@ public class MapsActivity extends AppCompatActivity
         retrieveMarkers(mCursor);
 
 
+        //Set up number of cities visited
+        updateNumberOfCities();
+
+
+
         //Animations setup
         mStartFadeInAnimation = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in);
         mStartFadeInAnimation.setFillAfter(true);
@@ -230,7 +241,7 @@ public class MapsActivity extends AppCompatActivity
             @Override
             public void onInfoWindowClick(Marker marker) {
                 String markerId = marker.getSnippet();
-                int id =Integer.valueOf( markerId) ;
+                int id = Integer.valueOf(markerId);
                 Intent intent = new Intent(MapsActivity.this, MarkerActivity.class);
                 intent.putExtra("MarkerID", id);
                 startActivity(intent);
@@ -266,7 +277,7 @@ public class MapsActivity extends AppCompatActivity
 
 
         // Position the map's camera
-        if(mCameraPosition == 0){
+        if (mCameraPosition == 0) {
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(new LatLng(44.66278, 20.93))      // Sets the center of the map to location user
                     .zoom(1)                   // Sets the zoom
@@ -275,8 +286,6 @@ public class MapsActivity extends AppCompatActivity
             mCameraPosition = 1;
 
         }
-
-
 
 
     }
@@ -346,9 +355,6 @@ public class MapsActivity extends AppCompatActivity
     }
 
 
-
-
-
     //Update picture URIS to make deleting of pictures possible
     public static void updatePicturePaths(int id, String picturePaths) {
         String rowID = Integer.toString(id);
@@ -389,102 +395,13 @@ public class MapsActivity extends AppCompatActivity
     }
 
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == 1) {
-            if (resultCode == Activity.RESULT_OK) {
-                Place place = PlaceAutocomplete.getPlace(this, data);
-
-
-                //Retrieve information about selected place and zoom into it
-                mLatLong = place.getLatLng();
-                CameraPosition cameraPosition = new CameraPosition.Builder()
-                        .target(new LatLng(mLatLong.latitude, mLatLong.longitude))      // Sets the center of the map to location user
-                        .zoom(4)                   // Sets the zoom
-                        .build();                   // Creates a CameraPosition from the builder
-                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                Log.d("Maps", "Place selected: " + place.getName());
-
-
-                //Retrieve location information from latitude and longitude
-                gcd = new Geocoder(MapsActivity.this, Locale.getDefault());
-                try {
-                    List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
-                    city = address.get(0).getLocality();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-
-                //Check if selected place was already added
-
-                mCursor = getAllPlaces();
-                retrieveMarkers(mCursor);
-                if(markerHashMap.size()!=0){
-                    for (int i = 0; i < markerHashMap.size(); i++) {
-                        MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
-                        if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
-                            Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
-                            View sb_duplicateView = duplicate.getView();
-                            TextView tv_sb_duplicate = (TextView) sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
-                            tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                            sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
-                            duplicate.show();
-                            return;
-                        }
-
-                    }
-                }
-
-
-                Snackbar placeAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
-                View sb_placeAddedView = placeAdded.getView();
-                sb_placeAddedView.setBackgroundColor(getColor(R.color.colorPrimary));
-                TextView tv_sb_placeAdded = (TextView) sb_placeAddedView.findViewById(android.support.design.R.id.snackbar_text);
-                tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                placeAdded.show();
-
-                MarkerOptions currentMarker = new MarkerOptions()
-                        .position(mLatLong)
-                        .title(city)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-
-
-                mMap.addMarker(currentMarker);
-
-                //Add place into database
-
-                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
-                refreshMap();
-
-
-
-
-
-
-            }
-            if (resultCode == Activity.RESULT_CANCELED) {
-                Snackbar noPlaceAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
-                View sb_noPlaceAddedView = noPlaceAdded.getView();
-                sb_noPlaceAddedView.setBackgroundColor(getColor(R.color.colorAccent));
-                TextView tv_sb_noPlaceAdded = (TextView) sb_noPlaceAddedView.findViewById(android.support.design.R.id.snackbar_text);
-                tv_sb_noPlaceAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-
-            }
-
-            onMapReady(mMap);
-        }
-
-    }
-
-    private void refreshMap(){
+    private void refreshMap() {
         mMap.clear();
         Cursor cursor = getAllPlaces();
         retrieveMarkers(cursor);
         setMarkers();
     }
-
 
 
     @Override
@@ -524,9 +441,101 @@ public class MapsActivity extends AppCompatActivity
         }
 
         refreshMap();
+        updateNumberOfCities();
 
         tv_delete.startAnimation(mStartFadeOutAnimation);
         mAddButton.startAnimation(mStartFadeInAnimation);
     }
 
+    private void updateNumberOfCities(){
+        mNumberOfCities = markerHashMap.size();
+        mTV_number_of_cities_visited.setText(Integer.toString(mNumberOfCities));
+    }
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                Place place = PlaceAutocomplete.getPlace(this, data);
+
+
+                //Retrieve information about selected place and zoom into it
+                mLatLong = place.getLatLng();
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(mLatLong.latitude, mLatLong.longitude))      // Sets the center of the map to location user
+                        .zoom(4)                   // Sets the zoom
+                        .build();                   // Creates a CameraPosition from the builder
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                Log.d("Maps", "Place selected: " + place.getName());
+
+
+                //Retrieve location information from latitude and longitude
+                gcd = new Geocoder(MapsActivity.this, Locale.getDefault());
+                try {
+                    List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
+                    city = address.get(0).getLocality();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+                //Check if selected place was already added
+
+                mCursor = getAllPlaces();
+                retrieveMarkers(mCursor);
+                if (markerHashMap.size() != 0) {
+                    for (int i = 0; i < markerHashMap.size(); i++) {
+                        MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
+                        if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
+                            Snackbar duplicate = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
+                            View sb_duplicateView = duplicate.getView();
+                            TextView tv_sb_duplicate = sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
+                            tv_sb_duplicate.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                            sb_duplicateView.setBackgroundColor(getColor(R.color.colorAccent));
+                            duplicate.show();
+                            return;
+                        }
+
+                    }
+                }
+
+
+                Snackbar placeAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
+                View sb_placeAddedView = placeAdded.getView();
+                sb_placeAddedView.setBackgroundColor(getColor(R.color.colorPrimaryDark));
+                TextView tv_sb_placeAdded = sb_placeAddedView.findViewById(android.support.design.R.id.snackbar_text);
+                tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                placeAdded.show();
+
+                MarkerOptions currentMarker = new MarkerOptions()
+                        .position(mLatLong)
+                        .title(city)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+
+
+                mMap.addMarker(currentMarker);
+
+                //Add place into database
+
+                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
+            }
+
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Snackbar noPlaceAdded = Snackbar.make(findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
+                View sb_noPlaceAddedView = noPlaceAdded.getView();
+                sb_noPlaceAddedView.setBackgroundColor(getColor(R.color.colorAccent));
+                TextView tv_sb_noPlaceAdded = sb_noPlaceAddedView.findViewById(android.support.design.R.id.snackbar_text);
+                tv_sb_noPlaceAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+
+            }
+
+            onMapReady(mMap);
+            refreshMap();
+            updateNumberOfCities();
+        }
+
+    }
 }

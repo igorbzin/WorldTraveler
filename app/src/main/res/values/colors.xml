@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">@android:color/holo_green_light</color>
-    <color name="colorPrimaryDark">#1B5E20</color>
+    <color name="colorPrimaryDark">#00a651</color>
     <color name="colorAccent">#FF4081</color>
     <color name="colorDrawerBG">#6c6c6c</color>
-    <color name="textColor">#FFFFFF</color>
+    <color name="textWhite">#FFFFFF</color>
+    <color name="textBlack">#000000</color>
 </resources>

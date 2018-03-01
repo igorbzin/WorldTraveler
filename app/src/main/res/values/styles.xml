@@ -2,7 +2,7 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimary">#1B5E20</item>
+        <item name="colorPrimary">#00a651</item>
         <item name="colorPrimaryDark">#6C6C6C</item>
         <item name="colorAccent">#EF9A9A</item>
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
