@@ -2,6 +2,7 @@ package com.example.styledmap;
 
 
 import android.app.Activity;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -17,8 +18,12 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -110,6 +115,21 @@ public class MapsActivity extends AppCompatActivity
         NavigationView navigationView =  findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
         mTV_number_of_cities_visited = headerView.findViewById(R.id.tv_number_of_cities_visited);
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                item.setChecked(true);
+                mDrawerLayout.closeDrawers();
+
+                int id = item.getItemId();
+                if(id == R.id.menu_item_settings){
+                    Intent intent = new Intent(MapsActivity.this, SettingsActivity.class);
+                    startActivity(intent);
+
+                }
+                return true;
+            }
+        });
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 

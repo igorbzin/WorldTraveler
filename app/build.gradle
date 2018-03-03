@@ -40,5 +40,6 @@ dependencies {
     }
     annotationProcessor 'com.github.bumptech.glide:compiler:4.6.1'
     compile 'com.github.apl-devs:appintro:v4.2.3'
+    compile 'com.android.support:preference-v7:26.1.0'
     testCompile 'junit:junit:4.12'
 }
