@@ -14,13 +14,8 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
-
-
-        Toolbar actionbar = findViewById(R.id.tb_actionbar);
-        setSupportActionBar(actionbar);
-
-
-
+        setContentView(R.layout.fragment_settings);
+       // Toolbar actionbar = findViewById(R.id.tb_actionbar);
+      //  setSupportActionBar(actionbar);
     }
 }

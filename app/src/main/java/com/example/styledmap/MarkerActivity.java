@@ -42,7 +42,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         super.onCreate(savedInstanceState);
 
         mPictureUris = new ArrayList<>();
-        mPictureUris = MapsActivity.getPicturePaths(mCurrentMarkerID);
+        mPictureUris = MapFragment.getPicturePaths(mCurrentMarkerID);
 
         setContentView(R.layout.activity_marker);
 
@@ -112,7 +112,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
                 mPictureUris.add(pictureUri);
             }
             new FetchImagesTask().execute(mPictureUris);
-            MapsActivity.updatePicturePaths(mCurrentMarkerID, makePathString());
+            MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
         }
 
     }
@@ -137,7 +137,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     @Override
     public void onDeletePictureClick(int position) {
         mPictureUris.remove(position);
-        MapsActivity.updatePicturePaths(mCurrentMarkerID, makePathString());
+        MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
         mAdapter.notifyDataSetChanged();
     }
 

@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         setContentView(R.layout.activity_main);
         permissionsRequest();
 
-
     }
 
 
@@ -49,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         } else {
             //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            finish();
+            MainActivity.this.finish();
         }
     }
 
