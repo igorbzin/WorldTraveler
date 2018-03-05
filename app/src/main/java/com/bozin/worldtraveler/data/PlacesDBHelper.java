@@ -1,4 +1,4 @@
-package com.example.styledmap.data;
+package com.bozin.worldtraveler.data;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -22,7 +22,7 @@ public class PlacesDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         final String sql_create_table = "CREATE TABLE " + PlacesContract.PlacesEntry.TABLE_NAME + " (" +
                 PlacesContract.PlacesEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                PlacesContract.PlacesEntry.COLUMN_CITY + " TEXT NOT NULL, " +
+                PlacesContract.PlacesEntry.COLUMN_CITY + " TEXT NOT NULL, " + PlacesContract.PlacesEntry.COLUMN_COUNTRY + " TEXT NOT NULL, " +
                 PlacesContract.PlacesEntry.COLUMN_LATITUDE + " DOUBLE NOT NULL, " +
                 PlacesContract.PlacesEntry.COLUMN_LONGITUDE + " DOUBLE NOT NULL, " +
                 PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS + " TEXT " +

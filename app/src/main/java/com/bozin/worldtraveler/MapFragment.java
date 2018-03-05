@@ -1,9 +1,10 @@
-package com.example.styledmap;
+package com.bozin.worldtraveler;
 
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -15,9 +16,10 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -30,9 +32,9 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import com.example.styledmap.Adapters.CustomInfoWindowAdapter;
-import com.example.styledmap.data.PlacesContract;
-import com.example.styledmap.data.PlacesDBHelper;
+import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
+import com.bozin.worldtraveler.data.PlacesContract;
+import com.bozin.worldtraveler.data.PlacesDBHelper;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
@@ -51,19 +53,19 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Created by igorb on 03/03/2018.
  */
 
-public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
+public class MapFragment extends android.support.v4.app.Fragment implements  OnMapReadyCallback {
 
     private MapView mMapView;
     public static SQLiteDatabase mDb;
@@ -73,6 +75,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private static final String TAG = MapsActivity.class.getSimpleName();
     private LatLng mLatLong;
     private String city;
+    private String country;
+    private ArrayList<String> mCountriesVisited;
     private Location location;
     private TextView tv_delete;
     public static LinkedHashMap<Integer, MarkerOptions> markerHashMap;
@@ -81,7 +85,34 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private Animation mStartFadeInAnimation;
     private Animation mStartFadeOutAnimation;
     private int mCameraPosition;
+
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
+
+
+    MapFragmentStatisticsListener mCallback;
+
+    public static MapFragment newInstance(){
+        MapFragment mapFragment =new MapFragment();
+        return mapFragment;
+    }
+
+    // Container Activity must implement this interface
+    public interface MapFragmentStatisticsListener {
+        void statisticsUpdate(int numberOfCities, int numberOfCountries);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception
+        try {
+            mCallback = (MapFragmentStatisticsListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString()
+                    + " must implement MapfragmentStatisticsListener");
+        }
+    }
 
 
     @Nullable
@@ -90,7 +121,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
         FrameLayout constraintLayout = getActivity().findViewById(R.id.container);
-
+        mAddButton = rootView.findViewById(R.id.btn_add_place);
         mMapView = rootView.findViewById(R.id.google_map);
 
 
@@ -98,25 +129,64 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         tv_delete = rootView.findViewById(R.id.tv_delete_marker);
 
         mMapView.onCreate(savedInstanceState);
-
         mMapView.onResume();
-
         try {
             MapsInitializer.initialize(getActivity().getApplicationContext());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        mMapView.getMapAsync(this);
+        return rootView;
+
+    }
+
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        //Set up Database
+        PlacesDBHelper placesDBHelper = new PlacesDBHelper(getActivity());
+        mDb = placesDBHelper.getWritableDatabase();
+
+        markerHashMap = new LinkedHashMap<>();
+        mCountriesVisited = new ArrayList<>();
+
+        //Set up location manager
+        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        String provider;
+
+        try{
+            provider = locationManager.getBestProvider(criteria, false);
+            location = locationManager.getLastKnownLocation(provider);
+        } catch (
+                NullPointerException e)
+        {
+            e.printStackTrace();
+        } catch (SecurityException exception){
+            exception.printStackTrace();
+        }
+        try{
+            mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+        //Retrieve markers from db
+        mCursor = getAllPlaces();
+        retrieveMarkers(mCursor);
+
 
         //Set up add button
 
-        mAddButton = rootView.findViewById(R.id.btn_add_place);
+
         mAddButton.setOnClickListener(new View.OnClickListener()
 
         {
             @Override
             public void onClick(View v) {
-
+                refresh();
                 try {
                     AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
 
@@ -125,8 +195,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                                     .setFilter(filter)
                                     .build(getActivity());
 
-                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
-                    getActivity().overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                    getActivity().startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
                 } catch (GooglePlayServicesRepairableException e) {
                     // TODO: Handle the error.
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -135,65 +204,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             }
         });
 
-
-        mMapView.getMapAsync(this);
-
-        return rootView;
-
-    }
-
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        //Set up Database
-        super.onActivityCreated(savedInstanceState);
-        PlacesDBHelper placesDBHelper = new PlacesDBHelper(getActivity());
-        mDb = placesDBHelper.getWritableDatabase();
-
-        markerHashMap = new LinkedHashMap<>();
-
-        //Set up location manager
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        String provider;
-
-        try
-
-        {
-            provider = locationManager.getBestProvider(criteria, false);
-            location = locationManager.getLastKnownLocation(provider);
-
-        } catch (
-                NullPointerException e)
-
-        {
-            e.printStackTrace();
-        } catch (
-                SecurityException exception)
-
-        {
-            exception.printStackTrace();
-        }
-
-        try
-
-        {
-            mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
-        } catch (
-                Exception e)
-
-        {
-            e.printStackTrace();
-        }
-
-        //Retrieve markers from db
-        mCursor = getAllPlaces();
-
-        retrieveMarkers(mCursor);
-
-
-        //Set up number of cities visited
-        updateNumberOfCities();
 
 
         //Animations setup
@@ -204,6 +214,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
         //camera position
         mCameraPosition = 0;
+
+        updateStatisticNumbers();
     }
 
 
@@ -223,9 +235,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     //Function to add new places into the database
-    public long addNewPlace(String name, double latitude, double longitude) {
+    public long addNewPlace(String city, String country,  double latitude, double longitude) {
         ContentValues cv = new ContentValues();
-        cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, name);
+        cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, city);
+        cv.put(PlacesContract.PlacesEntry.COLUMN_COUNTRY, country);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LATITUDE, latitude);
         cv.put(PlacesContract.PlacesEntry.COLUMN_LONGITUDE, longitude);
         cv.putNull(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS);
@@ -252,6 +265,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     //Retrieve all markers from database
     public void retrieveMarkers(Cursor cursor) {
         markers.clear();
+        mCountriesVisited.clear();
         markerHashMap.clear();
         cursor = getAllPlaces();
         for (int i = 0; i < cursor.getCount(); i++) {
@@ -259,12 +273,16 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 Log.d("Cursor", "Cursor is empty");
             } else {
                 String cCity = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_CITY));
+                String cCountry = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_COUNTRY));
                 double cLatitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LATITUDE));
                 double cLongitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LONGITUDE));
                 int cId = cursor.getInt(cursor.getColumnIndex(PlacesContract.PlacesEntry._ID));
                 String cPictureUris = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
                 LatLng cLatLng = new LatLng(cLatitude, cLongitude);
                 MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                if(!mCountriesVisited.contains(cCountry)){
+                    mCountriesVisited.add(cCountry);
+                }
                 markerHashMap.put(cId, cMarkerOptions);
             }
         }
@@ -312,10 +330,27 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
+    public  void refresh(){
+        String mapStyle = getMapStyle();
+        //Style the map
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = mMap.setMapStyle(new MapStyleOptions(mapStyle));
+
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.");
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.e(TAG, "Can't find style. Error: ", e);
+        }
+    }
+
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == 1) {
+        if (requestCode == REQUEST_CODE_SEARCH_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(getActivity(), data);
 
@@ -335,6 +370,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
                     city = address.get(0).getLocality();
+                    country  = address.get(0).getCountryName();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -378,7 +415,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 //Add place into database
 
-                addNewPlace(city, mLatLong.latitude, mLatLong.longitude);
+                addNewPlace(city, country, mLatLong.latitude, mLatLong.longitude);
             }
 
             if (resultCode == Activity.RESULT_CANCELED) {
@@ -392,7 +429,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
             onMapReady(mMap);
             refreshMap();
-            updateNumberOfCities();
+            updateStatisticNumbers();
         }
 
     }
@@ -459,10 +496,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 }
 
                 refreshMap();
-                //TODO updateNumberOfCities();
 
                 tv_delete.startAnimation(mStartFadeOutAnimation);
                 mAddButton.startAnimation(mStartFadeInAnimation);
+                updateStatisticNumbers();
             }
         });
 
@@ -496,19 +533,26 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
         //Style the map
-        try {
-            // Customise the styling of the base map using a JSON object defined
-            // in a raw resource file.
-            boolean success = googleMap.setMapStyle(
-                    MapStyleOptions.loadRawResourceStyle(
-                            getActivity(), R.raw.map_style));
+        if(Build.VERSION.SDK_INT > 23){
+            String  mapStyle = getMapStyle();
+            try {
+                // Customise the styling of the base map using a JSON object defined
+                // in a raw resource file.
+                boolean success = googleMap.setMapStyle(new MapStyleOptions(mapStyle));
 
+                if (!success) {
+                    Log.e(TAG, "Style parsing failed.");
+                }
+            } catch (Resources.NotFoundException e) {
+                Log.e(TAG, "Can't find style. Error: ", e);
+            }
+        } else {
+            boolean success = googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getActivity(), R.raw.map_style));
             if (!success) {
                 Log.e(TAG, "Style parsing failed.");
             }
-        } catch (Resources.NotFoundException e) {
-            Log.e(TAG, "Can't find style. Error: ", e);
         }
+
 
 
         // Position the map's camera
@@ -524,10 +568,19 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    public void updateNumberOfCities() {
-        int mNumberOfCities = markerHashMap.size();
-        MapsActivity.mTV_number_of_cities_visited.setText(Integer.toString(mNumberOfCities));
+    public void updateStatisticNumbers(){
+        int numberofCities = markerHashMap.size();
+        int numberOfCountries = mCountriesVisited.size();
+        mCallback.statisticsUpdate(numberofCities, numberOfCountries);
     }
+
+
+    private String getMapStyle(){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        String mapStyle = sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
+        return mapStyle;
+    }
+
 
 }
 

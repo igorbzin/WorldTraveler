@@ -1,48 +1,68 @@
 <resources>
     <string name="app_name">World Traveler</string>
     <string name="title_activity_maps">World Traveler</string>
-    <string name="key">AIzaSyBhdQiIgcXjHmDPzlctXxQd90L33oijX50</string>
-
-
+    <string name="key">AIzaSyCWP8onT0eN-ME3e2yGkjkAg9L6VzLORwk</string>
 
 
 
     <!--AppIntro-->
     <string name="ai_welcome">Welcome to</string>
-    <string name="ai_welcome_text">Track the cities you\'ve visited and add photos of your journies. You will be able to see the number of cities visited in the "settings" section on the left. </string>
+    <string name="ai_welcome_text">Track the cities you\'ve visited and add photos of your journies. You will be able to see the number of cities visited in the "Statistics" section on the left. </string>
     <string name="ai_add_city_title">Add city</string>
-    <string name="ai_add_city_text">Simply click on the green "add" button in the lower right corner and then search for any city in the menu. You will need an internet connection for that </string>
+    <string name="ai_add_city_text">Simply click on the green "add" button in the lower right corner and then search for any city in the menu. You will need an internet connection for this. </string>
     <string name="ai_marker_title">Add and view photos</string>
-    <string name="ai_marker_text">After you add a city, you can add or delete photos by clicking on the photo icon above the city.</string>
+    <string name="ai_marker_text">After you add a city, you can add or delete photos by clicking on the photo icon above it.</string>
     <string name="ai_add_photos_title">Adding and deleting photos</string>
-    <string name="ai_add_photos_text">Add photos from your phone by pressing the "Add Images" button. You can also delete them by pressing "Delete Images" and then pressing on the cross of each individual photo you wish to delete.</string>
+    <string name="ai_add_photos_text">After this, you can add or delete photos from your phone.</string>
 
 
 
+    <!--MapsActivity-->
     <string name="tv_delete">Delete</string>
-
-
-    <!--Drawer-->
-    <string name="open_drawer">Open</string>
-    <string name="closed_drawer">Closed</string>
-    <string name="tv_drawer_cities_string">Cities visited:</string>
-
-    <string name="dialog_title_permission_denied">Permission denied</string>
-    <string name="dialog_text_permission_denied">You need to allow permissions for the app to work</string>
-    <string name="dialog_positive_btn_permission_denied">Close</string>
-
-
-    <string name="menu_item_settings">Settings</string>
-    <string name="menu_item_map">Map</string>
     <string name="placeautocomplete_hint">Search for places you have visited</string>
     <string name="snackbar_duplicate">You already added this place!</string>
     <string name="snackbar_place_added">You succesfully added this place!</string>
     <string name="snackbar_no_place_added"> You didnt add any city!</string>
 
 
+    <!--MarkerActivity-->
     <string name="btn_add_image">Add image</string>
     <string name="btn_delete_image">Delete image</string>
 
+
+
+    <!--Drawer-->
+    <string name="open_drawer">Open</string>
+    <string name="closed_drawer">Closed</string>
+    <string name="menu_item_map">Map</string>
+    <string name="menu_item_statistics">Statistics</string>
+    <string name="menu_item_settings">Settings</string>
+
+
+
+    <!--Statistics fragment-->
+    <string name="tv_statistics_headline">Your personal statistics</string>
+    <string name="tv_statistics_cities_string">Cities</string>
+    <string name="tv_statistics_countries_string">Countries</string>
+
+
+    <!--Settings-->
+    <string name="settings_show_countries_label">Show country names</string>
+    <string name="settings_show_countries_key" translatable="false">show_country_names</string>
+    <string name="settings_show_cities_label">Show city names</string>
+    <string name="settings_show_cities_key" translatable="false">show_city_names</string>
+    <string name="settings_theme_label">Set application theme</string>
+    <string name="settings_theme_key">select_theme</string>
+    <string name="pref_theme_dark_label">Dark</string>
+    <string name="pref_theme_dark_value" translatable="false">dark</string>
+    <string name="pref_theme_light_label">Light</string>
+    <string name="pref_theme_light_value" translatable="false">light</string>
+
+
     <string name="close_app">Close</string>
+
+
+    <!--Sharedpreferences-->
+    <string name="sp_mapstyle_key">map_style_jsonarray</string>
 
 </resources>

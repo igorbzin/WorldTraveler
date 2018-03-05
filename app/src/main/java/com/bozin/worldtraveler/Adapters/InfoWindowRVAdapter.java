@@ -1,4 +1,4 @@
-package com.example.styledmap.Adapters;
+package com.bozin.worldtraveler.Adapters;
 
 
 import android.content.Context;
@@ -11,7 +11,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
-import com.example.styledmap.R;
+import com.bozin.worldtraveler.R;
 
 import java.util.ArrayList;
 

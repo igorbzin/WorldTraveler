@@ -3,8 +3,16 @@
 
     <CheckBoxPreference
         android:defaultValue="true"
-        android:key="show_country_names"
-        android:title="Show county names"
+        android:key="@string/settings_show_countries_key"
+        android:title="@string/settings_show_countries_label"
         />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="@string/settings_show_cities_key"
+        android:title="@string/settings_show_cities_label"
+        />
+
+
 
 </PreferenceScreen>

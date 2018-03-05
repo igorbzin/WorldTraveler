@@ -6,4 +6,5 @@
     <color name="colorDrawerBG">#6c6c6c</color>
     <color name="textWhite">#FFFFFF</color>
     <color name="textBlack">#000000</color>
+    <color name="blueGrey">#455A64</color>
 </resources>

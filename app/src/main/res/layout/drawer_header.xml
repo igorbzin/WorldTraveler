@@ -10,56 +10,16 @@
 
     <ImageView
         android:id="@+id/iv_white_green_logo"
-        android:layout_width="76dp"
-        android:layout_height="76dp"
-        android:layout_marginBottom="12dp"
+        android:layout_width="wrap_content"
+        android:layout_height="124dp"
         android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
         android:background="@android:color/transparent"
         android:src="@drawable/drawer_header_logo"
-        app:layout_constraintBottom_toTopOf="@+id/tv_cites_visited"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 
-    <TextView
-        android:id="@+id/tv_cites_visited"
-        android:layout_width="wrap_content"
-        android:layout_height="29dp"
-        android:layout_marginBottom="4dp"
-        android:layout_marginStart="8dp"
-        android:text="@string/tv_drawer_cities_string"
-        android:textColor="@color/textWhite"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
-    <ImageView
-        android:id="@+id/iv_earth_icon"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginStart="16dp"
-        android:src="@drawable/earth_icon"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_default="percent"
-        app:layout_constraintHeight_percent=".4"
-        app:layout_constraintStart_toEndOf="@+id/tv_cites_visited"
-        app:layout_constraintWidth_default="percent"
-        app:layout_constraintWidth_percent=".4" />
-
-    <TextView
-        android:id="@+id/tv_number_of_cities_visited"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="0"
-        android:textColor="@color/textWhite"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/iv_earth_icon"
-        app:layout_constraintEnd_toEndOf="@+id/iv_earth_icon"
-        app:layout_constraintStart_toStartOf="@+id/iv_earth_icon"
-        app:layout_constraintTop_toTopOf="@+id/iv_earth_icon" />
 
 </android.support.constraint.ConstraintLayout>

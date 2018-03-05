@@ -1,4 +1,4 @@
-package com.example.styledmap;
+package com.bozin.worldtraveler;
 
 /**
  * Created by igorb on 01.03.2018.

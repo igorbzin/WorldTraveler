@@ -1,6 +1,6 @@
-package com.example.styledmap.Adapters;
+package com.bozin.worldtraveler.Adapters;
 
-import com.example.styledmap.R;
+import com.bozin.worldtraveler.R;
 import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
