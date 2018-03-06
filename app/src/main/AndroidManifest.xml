@@ -27,6 +27,7 @@
             android:value="@string/key" />
 
         <activity android:name="com.bozin.worldtraveler.MapsActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"/>
 
         <activity android:name="com.bozin.worldtraveler.IntroActivity"/>
@@ -40,7 +41,6 @@
         </activity>
 
         <activity android:name="com.bozin.worldtraveler.MainActivity"
-            android:launchMode="singleTask"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

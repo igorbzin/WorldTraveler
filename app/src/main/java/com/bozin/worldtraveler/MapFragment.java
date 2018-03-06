@@ -65,7 +65,7 @@ import java.util.Locale;
  * Created by igorb on 03/03/2018.
  */
 
-public class MapFragment extends android.support.v4.app.Fragment implements  OnMapReadyCallback {
+public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
     private MapView mMapView;
     public static SQLiteDatabase mDb;
@@ -91,8 +91,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
 
     MapFragmentStatisticsListener mCallback;
 
-    public static MapFragment newInstance(){
-        MapFragment mapFragment =new MapFragment();
+    public static MapFragment newInstance() {
+        MapFragment mapFragment = new MapFragment();
         return mapFragment;
     }
 
@@ -157,19 +157,18 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
         Criteria criteria = new Criteria();
         String provider;
 
-        try{
+        try {
             provider = locationManager.getBestProvider(criteria, false);
             location = locationManager.getLastKnownLocation(provider);
         } catch (
-                NullPointerException e)
-        {
+                NullPointerException e) {
             e.printStackTrace();
-        } catch (SecurityException exception){
+        } catch (SecurityException exception) {
             exception.printStackTrace();
         }
-        try{
+        try {
             mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -195,7 +194,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
                                     .setFilter(filter)
                                     .build(getActivity());
 
-                    getActivity().startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
+                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
                 } catch (GooglePlayServicesRepairableException e) {
                     // TODO: Handle the error.
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -203,7 +202,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
                 }
             }
         });
-
 
 
         //Animations setup
@@ -235,7 +233,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
 
 
     //Function to add new places into the database
-    public long addNewPlace(String city, String country,  double latitude, double longitude) {
+    public long addNewPlace(String city, String country, double latitude, double longitude) {
         ContentValues cv = new ContentValues();
         cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, city);
         cv.put(PlacesContract.PlacesEntry.COLUMN_COUNTRY, country);
@@ -280,7 +278,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
                 String cPictureUris = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
                 LatLng cLatLng = new LatLng(cLatitude, cLongitude);
                 MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                if(!mCountriesVisited.contains(cCountry)){
+                if (!mCountriesVisited.contains(cCountry)) {
                     mCountriesVisited.add(cCountry);
                 }
                 markerHashMap.put(cId, cMarkerOptions);
@@ -330,7 +328,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
     }
 
 
-    public  void refresh(){
+    public void refresh() {
         String mapStyle = getMapStyle();
         //Style the map
         try {
@@ -370,7 +368,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
                     city = address.get(0).getLocality();
-                    country  = address.get(0).getCountryName();
+                    country = address.get(0).getCountryName();
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -533,26 +531,19 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
 
 
         //Style the map
-        if(Build.VERSION.SDK_INT > 23){
-            String  mapStyle = getMapStyle();
-            try {
-                // Customise the styling of the base map using a JSON object defined
-                // in a raw resource file.
-                boolean success = googleMap.setMapStyle(new MapStyleOptions(mapStyle));
 
-                if (!success) {
-                    Log.e(TAG, "Style parsing failed.");
-                }
-            } catch (Resources.NotFoundException e) {
-                Log.e(TAG, "Can't find style. Error: ", e);
-            }
-        } else {
-            boolean success = googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getActivity(), R.raw.map_style));
+        String mapStyle = getMapStyle();
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = googleMap.setMapStyle(new MapStyleOptions(mapStyle));
+
             if (!success) {
                 Log.e(TAG, "Style parsing failed.");
             }
+        } catch (Resources.NotFoundException e) {
+            Log.e(TAG, "Can't find style. Error: ", e);
         }
-
 
 
         // Position the map's camera
@@ -568,14 +559,14 @@ public class MapFragment extends android.support.v4.app.Fragment implements  OnM
     }
 
 
-    public void updateStatisticNumbers(){
+    public void updateStatisticNumbers() {
         int numberofCities = markerHashMap.size();
         int numberOfCountries = mCountriesVisited.size();
         mCallback.statisticsUpdate(numberofCities, numberOfCountries);
     }
 
 
-    private String getMapStyle(){
+    private String getMapStyle() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         String mapStyle = sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
         return mapStyle;

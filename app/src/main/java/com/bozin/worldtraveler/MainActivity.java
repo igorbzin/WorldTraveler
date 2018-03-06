@@ -99,6 +99,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
 
+
+
+
     private void startAppIntro() {
         Thread t = new Thread(new Runnable() {
             @Override
@@ -108,13 +111,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                         .getDefaultSharedPreferences(getBaseContext());
 
 
-                if(Build.VERSION.SDK_INT > 23){
-                    String jsonArray = setupMapStyle();
-                    SharedPreferences.Editor editor = getPrefs.edit();
-                    editor.putString(getString(R.string.sp_mapstyle_key), jsonArray);
-                    editor.apply();
-                }
-
+                String jsonArray = setupMapStyle();
+                SharedPreferences.Editor editor = getPrefs.edit();
+                editor.putString(getString(R.string.sp_mapstyle_key), jsonArray);
+                editor.apply();
 
 
                 //  Create a new boolean and preference and set it to true
@@ -143,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     e.apply();
                 } else {
                     Intent i = new Intent(MainActivity.this, MapsActivity.class);
-                    i.setFlags(i.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
                     startActivity(i);
                 }
             }
@@ -154,8 +153,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
 
-
-    public String setupMapStyle(){
+    public String setupMapStyle() {
         InputStream is = getResources().openRawResource(R.raw.map_style);
         Writer writer = new StringWriter();
         char[] buffer = new char[1024];
@@ -166,12 +164,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 writer.write(buffer, 0, n);
             }
 
-        } catch (java.io.UnsupportedEncodingException e){
+        } catch (java.io.UnsupportedEncodingException e) {
             e.printStackTrace();
 
         } catch (IOException e) {
             e.printStackTrace();
-        } finally{
+        } finally {
             try {
                 is.close();
             } catch (IOException e) {

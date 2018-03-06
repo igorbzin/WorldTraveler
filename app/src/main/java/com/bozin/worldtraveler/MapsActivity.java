@@ -7,7 +7,6 @@ import android.content.Intent;
 
 
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -25,6 +24,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,6 +50,7 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
     private ArrayList<Integer> mBackstackItems;
     private int mNumberOfCities;
     private int mNumberOfCountries;
+    private String mMapstyle;
 
     private boolean mShowCityNames;
     private boolean mShowCountryNames;
@@ -130,10 +131,10 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
             }
         });
 
-        if(Build.VERSION.SDK_INT > 23){
+
             setupSharedPreferences();
-            setMapStyle();
-        }
+            mMapstyle = setMapStyle();
+
 
     }
 
@@ -158,30 +159,12 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
+        /*for (Fragment fragment : getSupportFragmentManager().getFragments()) {
             fragment.onActivityResult(requestCode, resultCode, data);
         }
-    }
-
-
-    @Override
-    public void onBackPressed() {
-        moveTaskToBack(true);
-        /*highlightItemOnBackPress();
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.popBackStack();
         */
-
     }
 
-    private void highlightItemOnBackPress() {
-        if (mBackstackItems.size() > 1) {
-            int position = mBackstackItems.size() - 2;
-            mNavigationView.getMenu().getItem(mBackstackItems.get(position)).setChecked(true);
-            mBackstackItems.remove(mBackstackItems.size() - 1);
-        }
-
-    }
 
 
     @Override
@@ -192,7 +175,7 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
 
 
 
-    public void setMapStyle() {
+    public String setMapStyle() {
         SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
         mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
         mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
@@ -211,6 +194,7 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
         editor.putBoolean(getString(R.string.settings_show_cities_key), mShowCityNames);
         editor.putBoolean(getString(R.string.settings_show_countries_key), mShowCountryNames);
         editor.apply();
+        return  jsonArray.toString();
     }
 
 
@@ -272,9 +256,39 @@ public class MapsActivity extends AppCompatActivity implements SharedPreferences
         return array;
     }
 
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.v("OnSaveInstanceState", "OnSaveinstancestate called");
+        outState.putString("mapStyle", mMapstyle);
+
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        mMapstyle = savedInstanceState.getString("mapStyle");
+        Log.v("OnRestoreInstanceState", "Sucess: " + mMapstyle);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.v("OnResume", "OnResume called");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.v("OnStop", "OnStop called");
+
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.v("OnDestroy", "Ondestroy called");
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
     }
 }
