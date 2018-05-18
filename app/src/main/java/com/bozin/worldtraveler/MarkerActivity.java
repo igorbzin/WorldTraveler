@@ -57,7 +57,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
 
         mDeletingPictures = 0;
 
-        mPicturesRV = (RecyclerView) findViewById(R.id.recyclerView);
+        mPicturesRV = findViewById(R.id.recyclerView);
 
         if (mPictureUris != null) {
             mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this, MarkerActivity.this, mDeletingPictures);
@@ -68,7 +68,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         }
 
 
-        mBtnAddImage = (Button) findViewById(R.id.btn_add_images);
+        mBtnAddImage = findViewById(R.id.btn_add_images);
         mBtnAddImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -79,14 +79,12 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
             }
         });
 
-        Button btnDeleteImage = (Button) findViewById(R.id.btn_delete_images);
+        Button btnDeleteImage =  findViewById(R.id.btn_delete_images);
         btnDeleteImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mDeletingPictures = 1 - mDeletingPictures;
-                mPicturesRV.invalidate();
-                mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this, MarkerActivity.this, mDeletingPictures);
-                mPicturesRV.setAdapter(mAdapter);
+                mAdapter.updatePictures(mPictureUris, mDeletingPictures);
             }
         });
 
@@ -111,7 +109,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
                 Uri pictureUri = data.getData();
                 mPictureUris.add(pictureUri);
             }
-            new FetchImagesTask().execute(mPictureUris);
+            mAdapter.updatePictures(mPictureUris, mDeletingPictures);
             MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
         }
 
@@ -138,7 +136,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     public void onDeletePictureClick(int position) {
         mPictureUris.remove(position);
         MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
-        mAdapter.notifyDataSetChanged();
+        mAdapter.updatePictures(mPictureUris, mDeletingPictures);
     }
 
 

@@ -52,7 +52,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.data.kml.KmlLayer;
 
+
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -367,8 +370,18 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 gcd = new Geocoder(getActivity(), Locale.getDefault());
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
-                    city = address.get(0).getLocality();
-                    country = address.get(0).getCountryName();
+                    if(place.getLocale()!= null){
+                        city = address.get(0).getLocality();
+                    } else {
+                        city = place.getName().toString();
+                    }
+
+                    try {
+                        country = address.get(0).getCountryName();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        country = "No country data available";
+                    }
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -394,6 +407,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                     }
                 }
+
+
+
 
 
                 Snackbar placeAdded = Snackbar.make(getActivity().findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
@@ -428,6 +444,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             onMapReady(mMap);
             refreshMap();
             updateStatisticNumbers();
+
+
+
         }
 
     }
@@ -544,6 +563,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         } catch (Resources.NotFoundException e) {
             Log.e(TAG, "Can't find style. Error: ", e);
         }
+
 
 
         // Position the map's camera
