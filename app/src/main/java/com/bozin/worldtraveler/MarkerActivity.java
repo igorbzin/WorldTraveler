@@ -160,6 +160,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     }
 
 
+
     public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
 
         @Override
