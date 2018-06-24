@@ -1,5 +1,6 @@
 package com.bozin.worldtraveler;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,6 +15,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 import com.bozin.worldtraveler.Adapters.InfoWindowRVAdapter;
+import com.bozin.worldtraveler.data.AppExecutor;
 
 import java.util.ArrayList;
 
@@ -42,7 +44,13 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         super.onCreate(savedInstanceState);
 
         mPictureUris = new ArrayList<>();
-        mPictureUris = MapFragment.getPicturePaths(mCurrentMarkerID);
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                mPictureUris = getPicturePaths(mCurrentMarkerID);
+            }
+        });
+
 
         setContentView(R.layout.activity_marker);
 
@@ -110,7 +118,13 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
                 mPictureUris.add(pictureUri);
             }
             mAdapter.updatePictures(mPictureUris, mDeletingPictures);
-            MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
+            AppExecutor.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    updatePicturePaths(mCurrentMarkerID, makePathString());
+                }
+            });
+
         }
 
     }
@@ -135,7 +149,13 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     @Override
     public void onDeletePictureClick(int position) {
         mPictureUris.remove(position);
-        MapFragment.updatePicturePaths(mCurrentMarkerID, makePathString());
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                updatePicturePaths(mCurrentMarkerID, makePathString());
+
+            }
+        });
         mAdapter.updatePictures(mPictureUris, mDeletingPictures);
     }
 
@@ -156,6 +176,20 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         }
     }
 
+
+    //Get Picture Uris from DB
+    private ArrayList<Uri> getPicturePaths(int id) {
+        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        ArrayList<Uri> picturePaths = viewModel.getPicturePaths(id);
+        return picturePaths;
+    }
+
+
+    //Update picture URIS to make deleting of pictures possible
+    public  void updatePicturePaths(int id, String picturePaths) {
+        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        viewModel.updatePicturePaths(id, picturePaths);
+    }
 
 }
 

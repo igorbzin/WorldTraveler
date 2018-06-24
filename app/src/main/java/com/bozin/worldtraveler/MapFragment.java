@@ -1,13 +1,12 @@
 package com.bozin.worldtraveler;
 
 import android.app.Activity;
-import android.content.ContentValues;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Address;
@@ -16,7 +15,6 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -29,12 +27,11 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
-import com.bozin.worldtraveler.data.PlacesContract;
-import com.bozin.worldtraveler.data.PlacesDBHelper;
+import com.bozin.worldtraveler.data.AppDatabase;
+import com.bozin.worldtraveler.data.AppExecutor;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
@@ -52,14 +49,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.maps.android.data.kml.KmlLayer;
 
-
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -70,24 +63,22 @@ import java.util.Locale;
 
 public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
+    private final String TAG = "Room observer";
     private MapView mMapView;
-    public static SQLiteDatabase mDb;
+    public AppDatabase mDb;
     private GoogleMap mMap;
-    private ArrayList<MarkerOptions> markers = new ArrayList<>();
+    private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
     private Geocoder gcd;
-    private static final String TAG = MapsActivity.class.getSimpleName();
     private LatLng mLatLong;
-    private String city;
-    private String country;
-    private ArrayList<String> mCountriesVisited;
     private Location location;
     private TextView tv_delete;
-    public static LinkedHashMap<Integer, MarkerOptions> markerHashMap;
-    private Cursor mCursor;
     private Button mAddButton;
     private Animation mStartFadeInAnimation;
     private Animation mStartFadeOutAnimation;
     private int mCameraPosition;
+    public LinkedHashMap<Integer, MarkerOptions> markerHashMap;
+    private LinkedHashMap<Integer, String> mCountriesVisited;
+
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
@@ -104,29 +95,14 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         void statisticsUpdate(int numberOfCities, int numberOfCountries);
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (MapFragmentStatisticsListener) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString()
-                    + " must implement MapfragmentStatisticsListener");
-        }
-    }
-
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
-        FrameLayout constraintLayout = getActivity().findViewById(R.id.container);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
         mMapView = rootView.findViewById(R.id.google_map);
-
 
         //Set up views
         tv_delete = rootView.findViewById(R.id.tv_delete_marker);
@@ -149,11 +125,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         //Set up Database
-        PlacesDBHelper placesDBHelper = new PlacesDBHelper(getActivity());
-        mDb = placesDBHelper.getWritableDatabase();
 
-        markerHashMap = new LinkedHashMap<>();
-        mCountriesVisited = new ArrayList<>();
+        mCountriesVisited = new LinkedHashMap<>();
 
         //Set up location manager
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -175,14 +148,14 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             e.printStackTrace();
         }
 
+        markerHashMap = new LinkedHashMap<>();
+
         //Retrieve markers from db
-        mCursor = getAllPlaces();
-        retrieveMarkers(mCursor);
+        mDb = AppDatabase.getInstance(getContext());
+        setupViewModel();
 
 
         //Set up add button
-
-
         mAddButton.setOnClickListener(new View.OnClickListener()
 
         {
@@ -216,46 +189,73 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         //camera position
         mCameraPosition = 0;
 
-        updateStatisticNumbers();
+        //updateStatisticNumbers();
     }
 
 
-    // Database function for retrieving current database data in a cursor
-
-    public Cursor getAllPlaces() {
-        return mDb.query(
-                PlacesContract.PlacesEntry.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                PlacesContract.PlacesEntry._ID
-        );
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception
+        try {
+            mCallback = (MapFragmentStatisticsListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString()
+                    + " must implement MapfragmentStatisticsListener");
+        }
     }
 
 
-    //Function to add new places into the database
-    public long addNewPlace(String city, String country, double latitude, double longitude) {
-        ContentValues cv = new ContentValues();
-        cv.put(PlacesContract.PlacesEntry.COLUMN_CITY, city);
-        cv.put(PlacesContract.PlacesEntry.COLUMN_COUNTRY, country);
-        cv.put(PlacesContract.PlacesEntry.COLUMN_LATITUDE, latitude);
-        cv.put(PlacesContract.PlacesEntry.COLUMN_LONGITUDE, longitude);
-        cv.putNull(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS);
-        return mDb.insert(PlacesContract.PlacesEntry.TABLE_NAME, null, cv);
+    private void setupViewModel() {
+        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        viewModel.getPlacesList().observe(this, new Observer<List<com.bozin.worldtraveler.data.Place>>() {
+            @Override
+            public void onChanged(@Nullable List<com.bozin.worldtraveler.data.Place> places) {
+                Log.d(TAG, "Updating list of places from LiveData in ViewModel");
+                placesList = places;
+                createMarkersFromPlaces();
+                if(markerHashMap != null){
+                    setMarkers();
+                    updateStatisticNumbers();
+                }
+            }
+        });
     }
 
-    //Remove marker from db
-    public boolean removeMarker(int id) {
-        return mDb.delete(PlacesContract.PlacesEntry.TABLE_NAME, PlacesContract.PlacesEntry._ID + "=" + id, null) > 0;
+
+    public MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
+        String city = place.getCity_name();
+        String country = place.getCountry_name();
+        double latitude = place.getLatitude();
+        double longitude = place.getLongitude();
+        int markerId = place.getPlaceID();
+        LatLng latLng = new LatLng(latitude, longitude);
+
+        if (!mCountriesVisited.containsValue(country)) {
+            mCountriesVisited.put(markerId, country);
+        }
+
+        MarkerOptions cMarkerOptions = new MarkerOptions().title(city)
+                .snippet("" + markerId).position(latLng).draggable(true)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+        return cMarkerOptions;
+    }
+
+
+    public void createMarkersFromPlaces() {
+        for (int i = 0; i < placesList.size(); i++) {
+            com.bozin.worldtraveler.data.Place place = placesList.get(i);
+            MarkerOptions markerOptions = createMarkerOptions(place);
+            markerHashMap.put(place.getPlaceID(), markerOptions);
+        }
     }
 
 
     //Function to set all markers retrieved from database
     public void setMarkers() {
+        mMap.clear();
         ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
-
         for (int i = 0; i < markerOptionsList.size(); i++) {
             MarkerOptions option = markerOptionsList.get(i);
             mMap.addMarker(option);
@@ -263,71 +263,16 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    //Retrieve all markers from database
-    public void retrieveMarkers(Cursor cursor) {
-        markers.clear();
-        mCountriesVisited.clear();
-        markerHashMap.clear();
-        cursor = getAllPlaces();
-        for (int i = 0; i < cursor.getCount(); i++) {
-            if (!cursor.moveToPosition(i)) {
-                Log.d("Cursor", "Cursor is empty");
-            } else {
-                String cCity = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_CITY));
-                String cCountry = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_COUNTRY));
-                double cLatitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LATITUDE));
-                double cLongitude = cursor.getDouble(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_LONGITUDE));
-                int cId = cursor.getInt(cursor.getColumnIndex(PlacesContract.PlacesEntry._ID));
-                String cPictureUris = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
-                LatLng cLatLng = new LatLng(cLatitude, cLongitude);
-                MarkerOptions cMarkerOptions = new MarkerOptions().title(cCity).snippet("" + cId).position(cLatLng).draggable(true).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                if (!mCountriesVisited.contains(cCountry)) {
-                    mCountriesVisited.add(cCountry);
-                }
-                markerHashMap.put(cId, cMarkerOptions);
-            }
-        }
 
+    public void insertPlace(com.bozin.worldtraveler.data.Place place){
+        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        viewModel.insertPlace(place);
     }
 
 
-    //Update picture URIS to make deleting of pictures possible
-    public static void updatePicturePaths(int id, String picturePaths) {
-        String rowID = Integer.toString(id);
-        ContentValues cv = new ContentValues();
-        cv.put(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS, picturePaths);
-        mDb.update(PlacesContract.PlacesEntry.TABLE_NAME, cv, PlacesContract.PlacesEntry._ID + "= ?", new String[]{rowID});
-    }
-
-
-    //Get the uris of the pictures for a single city
-    public static ArrayList<Uri> getPicturePaths(int id) {
-        ArrayList<Uri> pathArrayList = new ArrayList<>();
-        String rowID = Integer.toString(id);
-        Cursor cursor = mDb.rawQuery("SELECT * FROM " + PlacesContract.PlacesEntry.TABLE_NAME + " WHERE "
-                + PlacesContract.PlacesEntry._ID + " =?", new String[]{rowID});
-        try {
-            cursor.moveToFirst();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        String pictureUriString = cursor.getString(cursor.getColumnIndex(PlacesContract.PlacesEntry.COLUMN_PICTURE_URIS));
-        if (pictureUriString != null) {
-            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0; i < pathStringsArrayList.size(); i++) {
-                String path = pathStringsArrayList.get(i);
-                pathArrayList.add(Uri.parse(path));
-            }
-        }
-        return pathArrayList;
-    }
-
-
-    private void refreshMap() {
-        mMap.clear();
-        Cursor cursor = getAllPlaces();
-        retrieveMarkers(cursor);
-        setMarkers();
+    public void deletePlaceById(int id){
+        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        viewModel.deletePlaceById(id);
     }
 
 
@@ -365,12 +310,15 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 Log.d("Maps", "Place selected: " + place.getName());
 
+                String city = null;
+                String country = null;
+
 
                 //Retrieve location information from latitude and longitude
                 gcd = new Geocoder(getActivity(), Locale.getDefault());
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
-                    if(place.getLocale()!= null){
+                    if (place.getLocale() != null) {
                         city = address.get(0).getLocality();
                     } else {
                         city = place.getName().toString();
@@ -390,8 +338,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 //Check if selected place was already added
 
-                mCursor = getAllPlaces();
-                retrieveMarkers(mCursor);
+
                 if (markerHashMap.size() != 0) {
                     for (int i = 0; i < markerHashMap.size(); i++) {
                         MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
@@ -409,9 +356,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 }
 
 
-
-
-
                 Snackbar placeAdded = Snackbar.make(getActivity().findViewById(R.id.drawer_layout), R.string.snackbar_place_added, Snackbar.LENGTH_LONG);
                 View sb_placeAddedView = placeAdded.getView();
                 sb_placeAddedView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
@@ -427,9 +371,13 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 mMap.addMarker(currentMarker);
 
-                //Add place into database
-
-                addNewPlace(city, country, mLatLong.latitude, mLatLong.longitude);
+                final com.bozin.worldtraveler.data.Place dbPlace = new com.bozin.worldtraveler.data.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
+                AppExecutor.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        insertPlace(dbPlace);
+                    }
+                });
             }
 
             if (resultCode == Activity.RESULT_CANCELED) {
@@ -440,13 +388,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 tv_sb_noPlaceAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 
             }
-
             onMapReady(mMap);
-            refreshMap();
-            updateStatisticNumbers();
-
-
-
         }
 
     }
@@ -499,24 +441,33 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             }
 
             @Override
-            public void onMarkerDragEnd(Marker marker) {
+            public void onMarkerDragEnd(final Marker marker) {
                 String string_id = marker.getSnippet();
-                int id = Integer.parseInt(string_id);
+                final int id = Integer.parseInt(string_id);
                 LatLng position = marker.getPosition();
                 Projection projection = mMap.getProjection();
                 Point screenPosition = projection.toScreenLocation(position);
                 int tv_delete_top_boundry = tv_delete.getTop();
 
                 if (screenPosition.y >= tv_delete_top_boundry) {
-                    boolean test = removeMarker(id);
-                    marker.remove();
+                    AppExecutor.getInstance().diskIO().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            deletePlaceById(id);
+                            mCountriesVisited.remove(id);
+                            markerHashMap.remove(id);
+                            updateStatisticNumbers();
+                        }
+                    });
+
+                } else {
+                    setMarkers();
                 }
 
-                refreshMap();
 
                 tv_delete.startAnimation(mStartFadeOutAnimation);
                 mAddButton.startAnimation(mStartFadeInAnimation);
-                updateStatisticNumbers();
+
             }
         });
 
@@ -539,7 +490,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
         //Set markers retrieved from database on now available map
-        setMarkers();
+        //setMarkers();
 
         // Set the button for retrieving the current location and moving camera to it
         try {
@@ -563,7 +514,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         } catch (Resources.NotFoundException e) {
             Log.e(TAG, "Can't find style. Error: ", e);
         }
-
 
 
         // Position the map's camera
