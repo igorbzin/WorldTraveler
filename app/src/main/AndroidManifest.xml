@@ -28,7 +28,7 @@
 
         <activity android:name="com.bozin.worldtraveler.MapsActivity"
             android:launchMode="singleTop"
-            android:screenOrientation="portrait"/>
+           />
 
         <activity android:name="com.bozin.worldtraveler.IntroActivity"/>
 

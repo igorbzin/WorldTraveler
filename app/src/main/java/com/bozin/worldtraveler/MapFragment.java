@@ -1,6 +1,7 @@
 package com.bozin.worldtraveler;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -78,7 +79,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private int mCameraPosition;
     public LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private LinkedHashMap<Integer, String> mCountriesVisited;
-
+    private PlacesViewModel viewModel;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
@@ -151,9 +152,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         markerHashMap = new LinkedHashMap<>();
 
         //Retrieve markers from db
+        viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
         mDb = AppDatabase.getInstance(getContext());
         setupViewModel();
-
 
         //Set up add button
         mAddButton.setOnClickListener(new View.OnClickListener()
@@ -165,12 +166,15 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 try {
                     AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
 
+                    ActivityOptions options =
+                            ActivityOptions.makeCustomAnimation(getContext(), R.anim.slide_in, R.anim.slide_out);
+
                     Intent intent =
                             new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
                                     .setFilter(filter)
                                     .build(getActivity());
 
-                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY);
+                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
                 } catch (GooglePlayServicesRepairableException e) {
                     // TODO: Handle the error.
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -178,6 +182,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 }
             }
         });
+
+
 
 
         //Animations setup
@@ -208,7 +214,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     private void setupViewModel() {
-        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, new Observer<List<com.bozin.worldtraveler.data.Place>>() {
             @Override
             public void onChanged(@Nullable List<com.bozin.worldtraveler.data.Place> places) {
@@ -265,13 +270,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     public void insertPlace(com.bozin.worldtraveler.data.Place place){
-        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
         viewModel.insertPlace(place);
     }
 
 
     public void deletePlaceById(int id){
-        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
         viewModel.deletePlaceById(id);
     }
 
@@ -363,13 +366,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 tv_sb_placeAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                 placeAdded.show();
 
-                MarkerOptions currentMarker = new MarkerOptions()
-                        .position(mLatLong)
-                        .title(city)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-
-
-                mMap.addMarker(currentMarker);
 
                 final com.bozin.worldtraveler.data.Place dbPlace = new com.bozin.worldtraveler.data.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
                 AppExecutor.getInstance().diskIO().execute(new Runnable() {

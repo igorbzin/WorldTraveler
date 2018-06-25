@@ -32,23 +32,9 @@ public class PlacesRepository {
     }
 
 
-    public ArrayList<Uri> getPicturePaths(int id) {
-        Place place = mPlacesDao.loadPlaceById(id);
-        String pictureUriString = place.getPicture_uris();
-        if (pictureUriString != null) {
-            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0; i < pathStringsArrayList.size(); i++) {
-                String path = pathStringsArrayList.get(i);
-                mPicturePaths.add(Uri.parse(path));
-            }
-        }
-        return mPicturePaths;
-    }
 
 
-    public void updatePicturePaths(int id, String picturePaths){
-        mPlacesDao.updatePlace(id, picturePaths);
-    }
+
 
 
     public void deletePlaceByID(int id){

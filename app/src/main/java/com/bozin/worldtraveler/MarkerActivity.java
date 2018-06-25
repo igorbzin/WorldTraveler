@@ -15,6 +15,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 import com.bozin.worldtraveler.Adapters.InfoWindowRVAdapter;
+import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 
 import java.util.ArrayList;
@@ -33,6 +34,8 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     private int mCurrentMarkerID;
     private int mDeletingPictures; // 0 = not deleting, 1 deleting button is pressed
     public final static int PICK_PHOTO_CODE = 11;
+    MarkerViewModel viewModel;
+    private AppDatabase db;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,13 +46,18 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         //Inflate layout, set display metrics
         super.onCreate(savedInstanceState);
 
-        mPictureUris = new ArrayList<>();
         AppExecutor.getInstance().diskIO().execute(new Runnable() {
             @Override
             public void run() {
+                db = AppDatabase.getInstance(MarkerActivity.this);
+                MarkerViewModelFactory factory = new MarkerViewModelFactory(db, mCurrentMarkerID);
+                viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
                 mPictureUris = getPicturePaths(mCurrentMarkerID);
             }
         });
+
+        mPictureUris = new ArrayList<>();
+
 
 
         setContentView(R.layout.activity_marker);
@@ -87,7 +95,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
             }
         });
 
-        Button btnDeleteImage =  findViewById(R.id.btn_delete_images);
+        Button btnDeleteImage = findViewById(R.id.btn_delete_images);
         btnDeleteImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -160,7 +168,6 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     }
 
 
-
     public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
 
         @Override
@@ -180,16 +187,14 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
 
     //Get Picture Uris from DB
     private ArrayList<Uri> getPicturePaths(int id) {
-        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        ArrayList<Uri> picturePaths = viewModel.getPicturePaths(id);
+        ArrayList<Uri> picturePaths = viewModel.getPicturePaths();
         return picturePaths;
     }
 
 
     //Update picture URIS to make deleting of pictures possible
-    public  void updatePicturePaths(int id, String picturePaths) {
-        PlacesViewModel viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        viewModel.updatePicturePaths(id, picturePaths);
+    public void updatePicturePaths(int id, String picturePaths) {
+        viewModel.updatePicturePaths(picturePaths);
     }
 
 }

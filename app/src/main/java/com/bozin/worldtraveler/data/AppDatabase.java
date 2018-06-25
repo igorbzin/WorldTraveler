@@ -39,7 +39,10 @@ public abstract class AppDatabase extends RoomDatabase {
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
-            // No table alteration, nothing to do
+            database.execSQL("CREATE TABLE `cities` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `city` TEXT NOT NULL, `country` TEXT NOT NULL," +
+                    " `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `picture_uris` TEXT);");
+            database.execSQL("INSERT INTO cities SELECT * FROM places;");
+            database.execSQL("DROP TABLE places");
         }
     };
 
