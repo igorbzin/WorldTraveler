@@ -17,8 +17,11 @@ import android.widget.Button;
 import com.bozin.worldtraveler.Adapters.InfoWindowRVAdapter;
 import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
+import com.bozin.worldtraveler.data.Place;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by igorb on 20.12.2017.
@@ -52,7 +55,7 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
                 db = AppDatabase.getInstance(MarkerActivity.this);
                 MarkerViewModelFactory factory = new MarkerViewModelFactory(db, mCurrentMarkerID);
                 viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
-                mPictureUris = getPicturePaths(mCurrentMarkerID);
+                mPictureUris = getPicturePaths();
             }
         });
 
@@ -186,9 +189,18 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
 
 
     //Get Picture Uris from DB
-    private ArrayList<Uri> getPicturePaths(int id) {
-        ArrayList<Uri> picturePaths = viewModel.getPicturePaths();
-        return picturePaths;
+    private ArrayList<Uri> getPicturePaths() {
+        Place place = viewModel.getPlace();
+        ArrayList<Uri> picturePathList = new ArrayList<>();
+        String pictureUriString = place.getPicture_uris();
+        if (pictureUriString != null) {
+            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
+            for (int i = 0; i < pathStringsArrayList.size(); i++) {
+                String path = pathStringsArrayList.get(i);
+                picturePathList.add(Uri.parse(path));
+            }
+        }
+        return picturePathList;
     }
 
 

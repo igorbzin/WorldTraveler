@@ -28,17 +28,9 @@ public class MarkerViewModel extends ViewModel {
     }
 
 
-    public ArrayList<Uri> getPicturePaths() {
-        ArrayList<Uri> picturePathList = new ArrayList<>();
-        String pictureUriString = place.getPicture_uris();
-        if (pictureUriString != null) {
-            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0; i < pathStringsArrayList.size(); i++) {
-                String path = pathStringsArrayList.get(i);
-                picturePathList.add(Uri.parse(path));
-            }
-        }
-        return picturePathList;
+    public Place getPlace() {
+        return place;
+
     }
 
 

@@ -30,12 +30,7 @@ public class PlacesRepository {
     public void insertPlace(Place place){
         mPlacesDao.insertPlace(place);
     }
-
-
-
-
-
-
+    
 
     public void deletePlaceByID(int id){
         mPlacesDao.deleteByPlaceId(id);
