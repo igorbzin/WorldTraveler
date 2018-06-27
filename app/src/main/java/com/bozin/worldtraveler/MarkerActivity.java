@@ -1,20 +1,26 @@
 package com.bozin.worldtraveler;
 
+import android.annotation.SuppressLint;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.constraint.motion.MotionLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import com.bozin.worldtraveler.Adapters.InfoWindowRVAdapter;
+import com.bozin.worldtraveler.Adapters.PictureRvAdapter;
 import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.bozin.worldtraveler.data.Place;
@@ -23,46 +29,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
+
 /**
  * Created by igorb on 20.12.2017.
  */
 
-public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAdapter.PictureOnClickHandler, InfoWindowRVAdapter.DeletePictureOnClickHandler {
+public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureOnClickHandler {
 
 
     private Button mBtnAddImage;
     private ArrayList<Uri> mPictureUris;
     private RecyclerView mPicturesRV;
-    private InfoWindowRVAdapter mAdapter;
+    private PictureRvAdapter mAdapter;
     private int mCurrentMarkerID;
-    private int mDeletingPictures; // 0 = not deleting, 1 deleting button is pressed
     public final static int PICK_PHOTO_CODE = 11;
     MarkerViewModel viewModel;
     private AppDatabase db;
+    private MotionLayout motionLayout;
 
+    @SuppressLint("StaticFieldLeak")
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         Intent mIntent = getIntent();
         mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
+        mPictureUris = new ArrayList<>();
 
         //Inflate layout, set display metrics
         super.onCreate(savedInstanceState);
-
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                db = AppDatabase.getInstance(MarkerActivity.this);
-                MarkerViewModelFactory factory = new MarkerViewModelFactory(db, mCurrentMarkerID);
-                viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
-                mPictureUris = getPicturePaths();
-            }
-        });
-
-        mPictureUris = new ArrayList<>();
-
-
-
         setContentView(R.layout.activity_marker);
 
         WindowManager.LayoutParams windowManager = getWindow().getAttributes();
@@ -74,38 +69,82 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         int width = dm.widthPixels;
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
-        mDeletingPictures = 0;
-
         mPicturesRV = findViewById(R.id.recyclerView);
 
-        if (mPictureUris != null) {
-            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this, MarkerActivity.this, mDeletingPictures);
-            GridLayoutManager layoutManager = new GridLayoutManager(MarkerActivity.this, 2);
-            mPicturesRV.setHasFixedSize(true);
-            mPicturesRV.setLayoutManager(layoutManager);
-            mPicturesRV.setAdapter(mAdapter);
-        }
+        new AsyncTask<Integer, Void, Void>() {
 
+            @Override
+            protected Void doInBackground(Integer... integers) {
+                db = AppDatabase.getInstance(MarkerActivity.this);
+                MarkerViewModelFactory factory = new MarkerViewModelFactory(db, mCurrentMarkerID);
+                viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                mPictureUris = getPicturePaths();
+
+                if (mAdapter != null) {
+                    mAdapter.updatePictures(mPictureUris);
+                } else {
+                    mAdapter = new PictureRvAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
+                    LinearLayoutManager layoutManager = new LinearLayoutManager(MarkerActivity.this, LinearLayoutManager.VERTICAL, false);
+                    DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
+                    mPicturesRV.addItemDecoration(decoration);
+                    mPicturesRV.setLayoutManager(layoutManager);
+                    mPicturesRV.setAdapter(mAdapter);
+                }
+
+                motionLayout = findViewById(R.id.motion01_layout_activity_marker);
+                motionLayout.transitionToEnd();
+
+            }
+        }.execute(mCurrentMarkerID);
+
+
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            // Called when a user swipes left or right on a ViewHolder
+            @SuppressLint("StaticFieldLeak")
+            @Override
+            public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                // implement swipe to delete
+                int position = viewHolder.getAdapterPosition();
+                mPictureUris.remove(position);
+                new AsyncTask<Integer, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Integer... integers) {
+                        updatePicturePaths(mCurrentMarkerID, makePathString());
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+                        mAdapter.updatePictures(mPictureUris);
+                    }
+                }.execute(position);
+            }
+        }).attachToRecyclerView(mPicturesRV);
 
         mBtnAddImage = findViewById(R.id.btn_add_images);
         mBtnAddImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_PICK);
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.setType("image/*");
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_PHOTO_CODE);
             }
         });
 
-        Button btnDeleteImage = findViewById(R.id.btn_delete_images);
-        btnDeleteImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mDeletingPictures = 1 - mDeletingPictures;
-                mAdapter.updatePictures(mPictureUris, mDeletingPictures);
-            }
-        });
 
     }
 
@@ -114,21 +153,27 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (data != null) {
 
-            if (data.getClipData() != null) {
-
-                ClipData mClipData = data.getClipData();
-
-                for (int i = 0; i < mClipData.getItemCount(); i++) {
-                    ClipData.Item item = mClipData.getItemAt(i);
-                    Uri uri = item.getUri();
-                    mPictureUris.add(uri);
-                }
-
-            } else if (data.getData() != null) {
+            if (data.getData() != null) {
                 Uri pictureUri = data.getData();
+                getContentResolver().takePersistableUriPermission(pictureUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 mPictureUris.add(pictureUri);
+            } else {
+                if (data.getClipData() != null) {
+
+
+                    ClipData mClipData = data.getClipData();
+
+                    for (int i = 0; i < mClipData.getItemCount(); i++) {
+                        ClipData.Item item = mClipData.getItemAt(i);
+                        Uri uri = item.getUri();
+                        getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        mPictureUris.add(uri);
+                    }
+                }
             }
-            mAdapter.updatePictures(mPictureUris, mDeletingPictures);
+
+
+            mAdapter.updatePictures(mPictureUris);
             AppExecutor.getInstance().diskIO().execute(new Runnable() {
                 @Override
                 public void run() {
@@ -139,6 +184,8 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         }
 
     }
+
+
 
 
     private String makePathString() {
@@ -157,31 +204,20 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         startActivity(intent);
     }
 
-    @Override
-    public void onDeletePictureClick(int position) {
-        mPictureUris.remove(position);
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                updatePicturePaths(mCurrentMarkerID, makePathString());
 
-            }
-        });
-        mAdapter.updatePictures(mPictureUris, mDeletingPictures);
-    }
-
-
-    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, InfoWindowRVAdapter> {
+    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, PictureRvAdapter> {
 
         @Override
-        protected InfoWindowRVAdapter doInBackground(ArrayList<Uri>... picturePaths) {
-            mAdapter = new InfoWindowRVAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this, MarkerActivity.this, mDeletingPictures);
+        protected PictureRvAdapter doInBackground(ArrayList<Uri>... picturePaths) {
+            mAdapter = new PictureRvAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
             return mAdapter;
         }
 
         @Override
-        protected void onPostExecute(InfoWindowRVAdapter adapter) {
+        protected void onPostExecute(PictureRvAdapter adapter) {
             GridLayoutManager gridLayoutManager = new GridLayoutManager(MarkerActivity.this, 2);
+            DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
+            mPicturesRV.addItemDecoration(decoration);
             mPicturesRV.setLayoutManager(gridLayoutManager);
             mPicturesRV.setAdapter(mAdapter);
         }
@@ -209,5 +245,29 @@ public class MarkerActivity extends AppCompatActivity implements InfoWindowRVAda
         viewModel.updatePicturePaths(picturePaths);
     }
 
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+    }
+
+
+    public void delayedFinish() {
+        super.finish();
+    }
+
+    @Override
+    public void finish() {
+        motionLayout.transitionToStart();
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                delayedFinish();
+            }
+        }, 900);
+
+    }
 }
 

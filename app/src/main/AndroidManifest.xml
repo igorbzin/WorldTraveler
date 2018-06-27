@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="com.google.android.apps.photos.contentprovider.impl.MediaContentProvider.READ_DATABASE"/>
 
     <application
         android:allowBackup="true"
@@ -26,7 +27,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/key" />
 
-        <activity android:name="com.bozin.worldtraveler.MapsActivity"
+        <activity android:name="com.bozin.worldtraveler.MainActivity"
             android:launchMode="singleTop"
            />
 
@@ -37,10 +38,10 @@
             android:theme="@style/AppTheme.MarkerActivity"/>
 
         <activity android:name="com.bozin.worldtraveler.SettingsActivity"
-            android:parentActivityName="com.bozin.worldtraveler.MapsActivity">
+            android:parentActivityName="com.bozin.worldtraveler.MainActivity">
         </activity>
 
-        <activity android:name="com.bozin.worldtraveler.MainActivity"
+        <activity android:name="com.bozin.worldtraveler.EntryActivity"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

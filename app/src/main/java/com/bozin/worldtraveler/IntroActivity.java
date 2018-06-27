@@ -37,14 +37,14 @@ public class IntroActivity extends AppIntro {
     @Override
     public void onSkipPressed(Fragment currentFragment) {
         super.onSkipPressed(currentFragment);
-        Intent intent = new Intent(IntroActivity.this, MapsActivity.class);
+        Intent intent = new Intent(IntroActivity.this, MainActivity.class);
         startActivity(intent);
     }
 
     @Override
     public void onDonePressed(Fragment currentFragment) {
         super.onDonePressed(currentFragment);
-        Intent intent = new Intent(IntroActivity.this, MapsActivity.class);
+        Intent intent = new Intent(IntroActivity.this, MainActivity.class);
         startActivity(intent);
     }
 }

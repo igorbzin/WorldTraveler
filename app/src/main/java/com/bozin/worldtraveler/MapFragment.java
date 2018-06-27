@@ -17,9 +17,12 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.constraint.motion.MotionLayout;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,6 +41,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -80,6 +84,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private LinkedHashMap<Integer, String> mCountriesVisited;
     private PlacesViewModel viewModel;
+    private MotionLayout motionLayout;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
 
@@ -102,6 +107,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
+        motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
         mMapView = rootView.findViewById(R.id.google_map);
 
@@ -125,9 +131,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //Set up Database
 
         mCountriesVisited = new LinkedHashMap<>();
+
 
         //Set up location manager
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -166,8 +172,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 try {
                     AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
 
-                    ActivityOptions options =
-                            ActivityOptions.makeCustomAnimation(getContext(), R.anim.slide_in, R.anim.slide_out);
+                    PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+                    ActivityOptionsCompat options =
+                            ActivityOptionsCompat.makeCustomAnimation(getContext(), R.anim.slide_in, R.anim.slide_out);
+                    startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
+                    /*
 
                     Intent intent =
                             new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
@@ -175,6 +184,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                                     .build(getActivity());
 
                     startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
+                    */
                 } catch (GooglePlayServicesRepairableException e) {
                     // TODO: Handle the error.
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -212,6 +222,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         }
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        motionLayout.transitionToEnd();
+    }
 
     private void setupViewModel() {
         viewModel.getPlacesList().observe(this, new Observer<List<com.bozin.worldtraveler.data.Place>>() {
@@ -301,7 +316,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
         if (requestCode == REQUEST_CODE_SEARCH_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
-                Place place = PlaceAutocomplete.getPlace(getActivity(), data);
+                Place place = PlacePicker.getPlace(getActivity(), data);
 
 
                 //Retrieve information about selected place and zoom into it
@@ -332,10 +347,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                     } catch (Exception e) {
                         e.printStackTrace();
                         country = "No country data available";
+                        return;
                     }
 
                 } catch (IOException e) {
                     e.printStackTrace();
+                    return;
                 }
 
 
@@ -386,7 +403,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             }
             onMapReady(mMap);
         }
-
     }
 
     @Override
@@ -539,5 +555,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        motionLayout.transitionToStart();
+    }
 }
 
