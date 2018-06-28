@@ -26,6 +26,7 @@
         android:id="@+id/btn_add_place"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:background="@drawable/ic_add_circle_black_24dp" />
+        android:background="@drawable/ic_add_circle_black_24dp"
+        />
 
 </android.support.constraint.motion.MotionLayout>

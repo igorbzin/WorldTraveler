@@ -1,13 +1,20 @@
 package com.bozin.worldtraveler.Adapters;
 
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
+import android.support.constraint.motion.MotionLayout;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bozin.worldtraveler.R;
@@ -36,7 +43,31 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
     }
 
 
+    public ArrayList<Uri> onItemRemove(final RecyclerView.ViewHolder viewHolder, final RecyclerView recyclerView) {
+        final int adapterPosition = viewHolder.getAdapterPosition();
+        final Uri mUri = mPicturePaths.get(adapterPosition);
 
+        Snackbar snackbar = Snackbar
+                .make(recyclerView , R.string.sb_deleted_image, Snackbar.LENGTH_LONG)
+                .setAction("UNDO", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        mPicturePaths.add(adapterPosition, mUri);
+                        notifyItemInserted(adapterPosition);
+                        recyclerView.scrollToPosition(adapterPosition);
+                    }
+                });
+        View snackbar_view = snackbar.getView();
+        TextView action_snackbar = snackbar_view.findViewById(android.support.design.R.id.snackbar_action);
+        action_snackbar.setTextColor(ContextCompat.getColor(mContext, R.color.yellow));
+        snackbar_view.setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+        snackbar.show();
+
+
+        mPicturePaths.remove(adapterPosition);
+        notifyItemRemoved(adapterPosition);
+        return mPicturePaths;
+    }
 
     public void updatePictures(ArrayList<Uri> updatedPictures) {
         mPicturePaths = updatedPictures;

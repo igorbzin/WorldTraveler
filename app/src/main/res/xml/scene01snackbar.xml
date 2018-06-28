@@ -3,8 +3,8 @@
     >
 
     <Transition
-        motion:constraintSetStart="@layout/motion01_start_marker_activity"
-        motion:constraintSetEnd="@layout/motion01_end_marker_activity"
+        motion:constraintSetStart="@layout/motion01_end_marker_activity"
+        motion:constraintSetEnd="@layout/motion01_snackbar"
         motion:duration="1000">
     </Transition>
 

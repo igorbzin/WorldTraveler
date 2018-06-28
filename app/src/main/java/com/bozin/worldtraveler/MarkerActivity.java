@@ -9,12 +9,16 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.constraint.motion.MotionLayout;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.transition.Scene;
+import android.transition.TransitionManager;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.WindowManager;
@@ -48,11 +52,13 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private AppDatabase db;
     private MotionLayout motionLayout;
 
+
+
     @SuppressLint("StaticFieldLeak")
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
-        Intent mIntent = getIntent();
+        final Intent mIntent = getIntent();
         mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
         mPictureUris = new ArrayList<>();
 
@@ -70,6 +76,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
         mPicturesRV = findViewById(R.id.recyclerView);
+
 
         new AsyncTask<Integer, Void, Void>() {
 
@@ -98,6 +105,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                 }
 
                 motionLayout = findViewById(R.id.motion01_layout_activity_marker);
+                motionLayout.loadLayoutDescription(R.xml.scene01);
                 motionLayout.transitionToEnd();
 
             }
@@ -111,26 +119,15 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
             }
 
             // Called when a user swipes left or right on a ViewHolder
-            @SuppressLint("StaticFieldLeak")
             @Override
             public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 // implement swipe to delete
-                int position = viewHolder.getAdapterPosition();
-                mPictureUris.remove(position);
-                new AsyncTask<Integer, Void, Void>() {
-                    @Override
-                    protected Void doInBackground(Integer... integers) {
-                        updatePicturePaths(mCurrentMarkerID, makePathString());
-                        return null;
-                    }
+                mAdapter.onItemRemove(viewHolder, mPicturesRV);
 
-                    @Override
-                    protected void onPostExecute(Void aVoid) {
-                        super.onPostExecute(aVoid);
-                        mAdapter.updatePictures(mPictureUris);
-                    }
-                }.execute(position);
             }
+
+
+
         }).attachToRecyclerView(mPicturesRV);
 
         mBtnAddImage = findViewById(R.id.btn_add_images);
@@ -184,8 +181,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
         }
 
     }
-
-
 
 
     private String makePathString() {
@@ -246,10 +241,24 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
+    @SuppressLint("StaticFieldLeak")
     @Override
     protected void onPause() {
         super.onPause();
+        new AsyncTask<Void, Void, Void>() {
 
+            @Override
+            protected Void doInBackground(Void... voids) {
+                updatePicturePaths(mCurrentMarkerID, makePathString());
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                mAdapter.updatePictures(mPictureUris);
+            }
+        }.execute();
     }
 
 

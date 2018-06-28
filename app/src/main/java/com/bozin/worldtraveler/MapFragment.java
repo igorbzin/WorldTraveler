@@ -21,6 +21,7 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.constraint.motion.MotionLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
@@ -171,12 +172,13 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 refresh();
                 try {
                     AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
-
-                    PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
                     ActivityOptionsCompat options =
                             ActivityOptionsCompat.makeCustomAnimation(getContext(), R.anim.slide_in, R.anim.slide_out);
-                    startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
                     /*
+                    PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+                    startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
+                    */
 
                     Intent intent =
                             new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
@@ -184,7 +186,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                                     .build(getActivity());
 
                     startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
-                    */
+
                 } catch (GooglePlayServicesRepairableException e) {
                     // TODO: Handle the error.
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -316,7 +318,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
         if (requestCode == REQUEST_CODE_SEARCH_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
-                Place place = PlacePicker.getPlace(getActivity(), data);
+                Place place = PlaceAutocomplete.getPlace(getActivity(), data);
 
 
                 //Retrieve information about selected place and zoom into it
