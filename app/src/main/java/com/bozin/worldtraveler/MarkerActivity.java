@@ -8,19 +8,15 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.constraint.motion.MotionLayout;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
+import android.support.transition.AutoTransition;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.transition.Scene;
-import android.transition.TransitionManager;
 import android.util.DisplayMetrics;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
@@ -42,7 +38,6 @@ import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
 public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureOnClickHandler {
 
 
-    private Button mBtnAddImage;
     private ArrayList<Uri> mPictureUris;
     private RecyclerView mPicturesRV;
     private PictureRvAdapter mAdapter;
@@ -50,8 +45,11 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     public final static int PICK_PHOTO_CODE = 11;
     MarkerViewModel viewModel;
     private AppDatabase db;
-    private MotionLayout motionLayout;
 
+    private static ConstraintLayout constraintLayout_start;
+    private ConstraintSet constraintSetStart = new ConstraintSet();
+    private ConstraintSet constraintSetEnd = new ConstraintSet();
+    private ConstraintSet constraintSetSnackbar = new ConstraintSet();
 
 
     @SuppressLint("StaticFieldLeak")
@@ -76,6 +74,10 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
         getWindow().setLayout((int) (width * .9), (int) (height * .6));
 
         mPicturesRV = findViewById(R.id.recyclerView);
+        constraintLayout_start = findViewById(R.id.constraintlayout_marker);
+        constraintSetStart.clone(constraintLayout_start);
+        constraintSetEnd.clone(this, R.layout.motion01_end_marker_activity);
+        constraintSetSnackbar.clone(this, R.layout.motion01_snackbar);
 
 
         new AsyncTask<Integer, Void, Void>() {
@@ -102,11 +104,9 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                     mPicturesRV.addItemDecoration(decoration);
                     mPicturesRV.setLayoutManager(layoutManager);
                     mPicturesRV.setAdapter(mAdapter);
+                    beginTransition(constraintSetEnd, 850);
                 }
 
-                motionLayout = findViewById(R.id.motion01_layout_activity_marker);
-                motionLayout.loadLayoutDescription(R.xml.scene01);
-                motionLayout.transitionToEnd();
 
             }
         }.execute(mCurrentMarkerID);
@@ -120,26 +120,20 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
             // Called when a user swipes left or right on a ViewHolder
             @Override
-            public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
-                // implement swipe to delete
-                mAdapter.onItemRemove(viewHolder, mPicturesRV);
-
+            public synchronized void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                beginTransition(constraintSetSnackbar, 300);
+                mAdapter.onItemRemove(viewHolder, mPicturesRV, constraintSetEnd);
             }
-
 
 
         }).attachToRecyclerView(mPicturesRV);
 
-        mBtnAddImage = findViewById(R.id.btn_add_images);
-        mBtnAddImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.setType("image/*");
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_PHOTO_CODE);
-            }
+        Button mBtnAddImage = findViewById(R.id.btn_add_images);
+        mBtnAddImage.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_PHOTO_CODE);
         });
 
 
@@ -171,12 +165,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
             mAdapter.updatePictures(mPictureUris);
-            AppExecutor.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    updatePicturePaths(mCurrentMarkerID, makePathString());
-                }
-            });
+            AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
 
         }
 
@@ -184,11 +173,11 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
     private String makePathString() {
-        String uriString = "";
+        StringBuilder uriString = new StringBuilder();
         for (int i = 0; i < mPictureUris.size(); i++) {
-            uriString += mPictureUris.get(i).toString() + ",";
+            uriString.append(mPictureUris.get(i).toString()).append(",");
         }
-        return uriString;
+        return uriString.toString();
     }
 
     @Override
@@ -200,23 +189,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
-    public class FetchImagesTask extends AsyncTask<ArrayList<Uri>, Void, PictureRvAdapter> {
-
-        @Override
-        protected PictureRvAdapter doInBackground(ArrayList<Uri>... picturePaths) {
-            mAdapter = new PictureRvAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
-            return mAdapter;
-        }
-
-        @Override
-        protected void onPostExecute(PictureRvAdapter adapter) {
-            GridLayoutManager gridLayoutManager = new GridLayoutManager(MarkerActivity.this, 2);
-            DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
-            mPicturesRV.addItemDecoration(decoration);
-            mPicturesRV.setLayoutManager(gridLayoutManager);
-            mPicturesRV.setAdapter(mAdapter);
-        }
-    }
 
 
     //Get Picture Uris from DB
@@ -236,7 +208,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
     //Update picture URIS to make deleting of pictures possible
-    public void updatePicturePaths(int id, String picturePaths) {
+    public void updatePicturePaths(String picturePaths) {
         viewModel.updatePicturePaths(picturePaths);
     }
 
@@ -249,7 +221,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
             @Override
             protected Void doInBackground(Void... voids) {
-                updatePicturePaths(mCurrentMarkerID, makePathString());
+                updatePicturePaths(makePathString());
                 return null;
             }
 
@@ -262,21 +234,22 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
+    public static void beginTransition(ConstraintSet constraintSet, int duration) {
+        AutoTransition autoTransition = new AutoTransition();
+        autoTransition.setDuration(duration);
+        android.support.transition.TransitionManager.beginDelayedTransition(constraintLayout_start, autoTransition);
+        constraintSet.applyTo(constraintLayout_start);
+    }
+
     public void delayedFinish() {
         super.finish();
     }
 
     @Override
     public void finish() {
-        motionLayout.transitionToStart();
+        beginTransition(constraintSetStart, 850);
         final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                delayedFinish();
-            }
-        }, 900);
-
+        handler.postDelayed(this::delayedFinish, 900);
     }
 }
 

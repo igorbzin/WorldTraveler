@@ -20,7 +20,7 @@ public class IntroActivity extends AppIntro {
         int white = ContextCompat.getColor(this, R.color.textWhite);
         int black = ContextCompat.getColor(this, R.color.textBlack);
         int logo_green = ContextCompat.getColor(this, R.color.colorPrimaryDark);
-        int bluegray = ContextCompat.getColor(this, R.color.blueGrey);
+
 
         addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_welcome),getText( R.string.ai_welcome_text), R.drawable.color_logo_transparent, white, logo_green, black));
         addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_add_city_title),getText( R.string.ai_add_city_text), R.drawable.screenshot_add_city,white, logo_green, black));
@@ -29,7 +29,7 @@ public class IntroActivity extends AppIntro {
         setColorDoneText(white);
         setColorSkipButton(white);
         setBarColor(logo_green);
-        setIndicatorColor(white, white  );
+        setIndicatorColor(white, white);
         setNextArrowColor(white);
 
     }

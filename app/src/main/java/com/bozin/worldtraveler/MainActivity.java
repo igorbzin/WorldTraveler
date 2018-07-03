@@ -26,8 +26,7 @@ import android.support.v7.widget.Toolbar;
 
 import android.util.Log;
 import android.view.Gravity;
-import android.view.MenuItem;
-import android.view.View;
+
 
 
 import org.json.JSONArray;
@@ -52,9 +51,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int mNumberOfCountries;
     private String mMapstyle;
 
-    private boolean mShowCityNames;
-    private boolean mShowCountryNames;
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,14 +70,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mDrawerLayout.addDrawerListener(drawerToggle);
         drawerToggle.syncState();
 
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!mDrawerLayout.isDrawerOpen(Gravity.START)) {
-                    mDrawerLayout.openDrawer(Gravity.START);
-                } else {
-                    mDrawerLayout.closeDrawers();
-                }
+        toolbar.setNavigationOnClickListener(view -> {
+            if (!mDrawerLayout.isDrawerOpen(Gravity.START)) {
+                mDrawerLayout.openDrawer(Gravity.START);
+            } else {
+                mDrawerLayout.closeDrawers();
             }
         });
         ActionBar actionBar = getSupportActionBar();
@@ -102,33 +95,49 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Fragment mMapFragment = new MapFragment();
         switchFragment(mFragmentManager, mMapFragment, 0);
 
-        mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                item.setChecked(true);
-                mDrawerLayout.closeDrawers();
 
-                int id = item.getItemId();
-                switch (id) {
-                    case R.id.menu_item_maps:
-                        Fragment maps = new MapFragment();
-                        switchFragment(mFragmentManager, maps, 0);
-                        break;
-                    case R.id.menu_item_statistics:
-                        Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
-                        switchFragment(mFragmentManager, statistics, 1);
-                        break;
-                    case R.id.menu_item_settings:
-                        Fragment settings = new SettingsFragment();
-                        switchFragment(mFragmentManager, settings, 2);
-                        break;
-                    default:
-                        Fragment defautlmaps = new MapFragment();
-                        switchFragment(mFragmentManager, defautlmaps, 0);
-                        break;
-                }
-                return true;
+
+        this.getSupportFragmentManager().addOnBackStackChangedListener(
+                () -> {
+                        Integer lastFragmentId;
+                        try {
+                            lastFragmentId = mBackstackItems.get(mBackstackItems.size()-2);
+                            mNavigationView.setCheckedItem(lastFragmentId);
+                        } catch (Exception e) {
+                            finish();
+                        }
+
+
+                });
+
+        mNavigationView.setNavigationItemSelectedListener(item -> {
+            item.setChecked(true);
+            mDrawerLayout.closeDrawers();
+
+            int id = item.getItemId();
+            switch (id) {
+                case R.id.menu_item_maps:
+                    Fragment maps = new MapFragment();
+                    switchFragment(mFragmentManager, maps, 0);
+                    break;
+                case R.id.menu_item_statistics:
+                    Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
+                    switchFragment(mFragmentManager, statistics, 1);
+                    break;
+                case R.id.menu_item_settings:
+                    Fragment settings = new SettingsFragment();
+                    switchFragment(mFragmentManager, settings, 2);
+                    break;
+                case R.id.menu_item_login:
+                    Fragment login = new LoginFragment();
+                    switchFragment(mFragmentManager, login, 3);
+                    break;
+                default:
+                    Fragment defaultmaps = new MapFragment();
+                    switchFragment(mFragmentManager, defaultmaps, 0);
+                    break;
             }
+            return true;
         });
 
 
@@ -137,6 +146,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     }
+
+
 
     private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, int navigationPosition) {
 
@@ -178,8 +189,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public String setMapStyle() {
         SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
-        mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
+        boolean mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
+        boolean mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
 
         String mapStyle = sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
         JSONArray jsonArray = null;
@@ -188,14 +199,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        jsonArray =setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
-        jsonArray =setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames );
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(getString(R.string.sp_mapstyle_key), jsonArray.toString());
-        editor.putBoolean(getString(R.string.settings_show_cities_key), mShowCityNames);
-        editor.putBoolean(getString(R.string.settings_show_countries_key), mShowCountryNames);
-        editor.apply();
-        return  jsonArray.toString();
+        if (jsonArray != null) {
+            jsonArray =setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
+            jsonArray =setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(getString(R.string.sp_mapstyle_key), jsonArray.toString());
+            editor.putBoolean(getString(R.string.settings_show_cities_key), mShowCityNames);
+            editor.putBoolean(getString(R.string.settings_show_countries_key), mShowCountryNames);
+            editor.apply();
+            return  jsonArray.toString();
+        } else {
+            return null;
+        }
     }
 
 
@@ -219,8 +234,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private JSONArray setPreferenceValue(JSONArray jsonArray, String preference, boolean visibility){
-        JSONArray array = jsonArray;
-        for (int i = 0; i < array.length(); i++) {
+        for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = null;
             try {
                 jsonObject = new JSONObject(jsonArray.get(i).toString());
@@ -228,13 +242,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 e.printStackTrace();
             }
             try {
-                if(jsonObject.has("featureType")){
-                    if (jsonObject.get("featureType").equals(preference)){
+                if (jsonObject != null && jsonObject.has("featureType")) {
+                    if (jsonObject.get("featureType").equals(preference)) {
                         JSONArray stylers = jsonObject.getJSONArray("stylers");
-                        JSONObject secondJSONObject = null;
-                        for (int j = 0; j < stylers.length(); j++){
+                        JSONObject secondJSONObject;
+                        for (int j = 0; j < stylers.length(); j++) {
                             secondJSONObject = new JSONObject(stylers.get(j).toString());
-                            if(!visibility){
+                            if (!visibility) {
                                 secondJSONObject.put("visibility", "off");
                             } else {
                                 secondJSONObject.put("visibility", "on");
@@ -249,12 +263,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 e.printStackTrace();
             }
             try {
-                array.put(i, jsonObject);
+                jsonArray.put(i, jsonObject);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-        return array;
+        return jsonArray;
     }
 
 
@@ -263,7 +277,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onSaveInstanceState(outState);
         Log.v("OnSaveInstanceState", "OnSaveinstancestate called");
         outState.putString("mapStyle", mMapstyle);
-
     }
 
     @Override
@@ -292,4 +305,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Log.v("OnDestroy", "Ondestroy called");
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
     }
+
+
 }

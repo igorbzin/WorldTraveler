@@ -6,7 +6,6 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 @Entity(tableName = "cities")
 public class Place {
@@ -14,7 +13,6 @@ public class Place {
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "_id")
-    @Nullable
     private int placeID;
 
     @ColumnInfo(name = "city")
@@ -35,7 +33,7 @@ public class Place {
     private String picture_uris;
 
 
-    public Place(int placeID, String city_name, String country_name, double latitude, double longitude, String picture_uris) {
+    public Place(int placeID, @NonNull String city_name, @NonNull String country_name, double latitude, double longitude, String picture_uris) {
         this.placeID = placeID;
         this.city_name = city_name;
         this.country_name = country_name;
@@ -45,7 +43,7 @@ public class Place {
     }
 
     @Ignore
-    public Place(String city_name, String country_name, double latitude, double longitude, String picture_uris) {
+    public Place(@NonNull String city_name, @NonNull String country_name, double latitude, double longitude, String picture_uris) {
         this.city_name = city_name;
         this.country_name = country_name;
         this.latitude = latitude;

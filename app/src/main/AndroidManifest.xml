@@ -37,10 +37,6 @@
             android:name="com.bozin.worldtraveler.MarkerActivity"
             android:theme="@style/AppTheme.MarkerActivity"/>
 
-        <activity android:name="com.bozin.worldtraveler.SettingsActivity"
-            android:parentActivityName="com.bozin.worldtraveler.MainActivity">
-        </activity>
-
         <activity android:name="com.bozin.worldtraveler.EntryActivity"
             >
             <intent-filter>

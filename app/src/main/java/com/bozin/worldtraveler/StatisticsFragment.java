@@ -1,5 +1,6 @@
 package com.bozin.worldtraveler;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -25,15 +26,18 @@ public class StatisticsFragment extends Fragment {
         return statisticsFragment;
     }
 
+    @SuppressLint("SetTextI18n")
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
         View rootView = inflater.inflate(R.layout.fragment_statistics, container, false);
         TextView numberOfCities = rootView.findViewById(R.id.tv_number_of_cities_visited);
         TextView numberOfCountries = rootView.findViewById(R.id.tv_number_of_countries_visited);
-        numberOfCities.setText(Integer.toString(getArguments().getInt("numberOfCities")));
-        numberOfCountries.setText(Integer.toString(getArguments().getInt("numberOfCountries")));
+        if (getArguments() != null) {
+            numberOfCities.setText(Integer.toString(getArguments().getInt("numberOfCities")));
+            numberOfCountries.setText(Integer.toString(getArguments().getInt("numberOfCountries")));
+        }
+
         return rootView;
     }
 

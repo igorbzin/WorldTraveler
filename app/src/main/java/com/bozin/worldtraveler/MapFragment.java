@@ -1,8 +1,6 @@
 package com.bozin.worldtraveler;
 
 import android.app.Activity;
-import android.app.ActivityOptions;
-import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
@@ -15,13 +13,11 @@ import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.motion.MotionLayout;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
@@ -42,7 +38,6 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
-import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -62,6 +57,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Created by igorb on 03/03/2018.
@@ -70,11 +66,9 @@ import java.util.Locale;
 public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
     private final String TAG = "Room observer";
-    private MapView mMapView;
     public AppDatabase mDb;
     private GoogleMap mMap;
     private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
-    private Geocoder gcd;
     private LatLng mLatLong;
     private Location location;
     private TextView tv_delete;
@@ -92,10 +86,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     MapFragmentStatisticsListener mCallback;
 
-    public static MapFragment newInstance() {
-        MapFragment mapFragment = new MapFragment();
-        return mapFragment;
-    }
 
     // Container Activity must implement this interface
     public interface MapFragmentStatisticsListener {
@@ -105,12 +95,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
         motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
-        mMapView = rootView.findViewById(R.id.google_map);
+        MapView mMapView = rootView.findViewById(R.id.google_map);
 
         //Set up views
         tv_delete = rootView.findViewById(R.id.tv_delete_marker);
@@ -118,7 +108,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume();
         try {
-            MapsInitializer.initialize(getActivity().getApplicationContext());
+            MapsInitializer.initialize(Objects.requireNonNull(getActivity()).getBaseContext());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -137,18 +127,17 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
         //Set up location manager
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) Objects.requireNonNull(getActivity()).getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         String provider;
 
         try {
-            provider = locationManager.getBestProvider(criteria, false);
-            location = locationManager.getLastKnownLocation(provider);
-        } catch (
-                NullPointerException e) {
+            if (locationManager != null) {
+                provider = locationManager.getBestProvider(criteria, false);
+                location = locationManager.getLastKnownLocation(provider);
+            }
+        } catch (NullPointerException | SecurityException e) {
             e.printStackTrace();
-        } catch (SecurityException exception) {
-            exception.printStackTrace();
         }
         try {
             mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
@@ -164,38 +153,29 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         setupViewModel();
 
         //Set up add button
-        mAddButton.setOnClickListener(new View.OnClickListener()
+        mAddButton.setOnClickListener(v -> {
+            refresh();
+            try {
+                AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
+                ActivityOptionsCompat options =
+                        ActivityOptionsCompat.makeCustomAnimation(Objects.requireNonNull(getContext()), R.anim.slide_in, R.anim.slide_out);
+                /*
+                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
 
-        {
-            @Override
-            public void onClick(View v) {
-                refresh();
-                try {
-                    AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
-                    ActivityOptionsCompat options =
-                            ActivityOptionsCompat.makeCustomAnimation(getContext(), R.anim.slide_in, R.anim.slide_out);
-                    /*
-                    PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+                startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
+                */
 
-                    startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
-                    */
+                Intent intent =
+                        new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                                .setFilter(filter)
+                                .build(getActivity());
 
-                    Intent intent =
-                            new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
-                                    .setFilter(filter)
-                                    .build(getActivity());
+                startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
 
-                    startActivityForResult(intent, REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
-
-                } catch (GooglePlayServicesRepairableException e) {
-                    // TODO: Handle the error.
-                } catch (GooglePlayServicesNotAvailableException e) {
-                    // TODO: Handle the error.
-                }
+            } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+                // TODO: Handle the error.
             }
         });
-
-
 
 
         //Animations setup
@@ -231,16 +211,13 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
     private void setupViewModel() {
-        viewModel.getPlacesList().observe(this, new Observer<List<com.bozin.worldtraveler.data.Place>>() {
-            @Override
-            public void onChanged(@Nullable List<com.bozin.worldtraveler.data.Place> places) {
-                Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-                placesList = places;
-                createMarkersFromPlaces();
-                if(markerHashMap != null){
-                    setMarkers();
-                    updateStatisticNumbers();
-                }
+        viewModel.getPlacesList().observe(this, places -> {
+            Log.d(TAG, "Updating list of places from LiveData in ViewModel");
+            placesList = places;
+            createMarkersFromPlaces();
+            if (markerHashMap != null) {
+                setMarkers();
+                updateStatisticNumbers();
             }
         });
     }
@@ -258,10 +235,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             mCountriesVisited.put(markerId, country);
         }
 
-        MarkerOptions cMarkerOptions = new MarkerOptions().title(city)
+        return new MarkerOptions().title(city)
                 .snippet("" + markerId).position(latLng).draggable(true)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-        return cMarkerOptions;
     }
 
 
@@ -285,13 +261,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-
-    public void insertPlace(com.bozin.worldtraveler.data.Place place){
+    public void insertPlace(com.bozin.worldtraveler.data.Place place) {
         viewModel.insertPlace(place);
     }
 
 
-    public void deletePlaceById(int id){
+    public void deletePlaceById(int id) {
         viewModel.deletePlaceById(id);
     }
 
@@ -318,7 +293,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
         if (requestCode == REQUEST_CODE_SEARCH_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
-                Place place = PlaceAutocomplete.getPlace(getActivity(), data);
+                Place place = PlaceAutocomplete.getPlace(Objects.requireNonNull(getActivity()), data);
 
 
                 //Retrieve information about selected place and zoom into it
@@ -330,12 +305,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 Log.d("Maps", "Place selected: " + place.getName());
 
-                String city = null;
-                String country = null;
+                String city;
+                String country;
 
 
                 //Retrieve location information from latitude and longitude
-                gcd = new Geocoder(getActivity(), Locale.getDefault());
+                Geocoder gcd = new Geocoder(getActivity(), Locale.getDefault());
                 try {
                     List<Address> address = gcd.getFromLocation(mLatLong.latitude, mLatLong.longitude, 1);
                     if (place.getLocale() != null) {
@@ -348,7 +323,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                         country = address.get(0).getCountryName();
                     } catch (Exception e) {
                         e.printStackTrace();
-                        country = "No country data available";
                         return;
                     }
 
@@ -387,16 +361,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
                 final com.bozin.worldtraveler.data.Place dbPlace = new com.bozin.worldtraveler.data.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
-                AppExecutor.getInstance().diskIO().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        insertPlace(dbPlace);
-                    }
-                });
+                AppExecutor.getInstance().diskIO().execute(() -> insertPlace(dbPlace));
             }
 
             if (resultCode == Activity.RESULT_CANCELED) {
-                Snackbar noPlaceAdded = Snackbar.make(getActivity().findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
+                Snackbar noPlaceAdded = Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
                 View sb_noPlaceAddedView = noPlaceAdded.getView();
                 sb_noPlaceAddedView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorAccent));
                 TextView tv_sb_noPlaceAdded = sb_noPlaceAddedView.findViewById(android.support.design.R.id.snackbar_text);
@@ -421,12 +390,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         //Disable Map Toolbar:
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                marker.showInfoWindow();
-                return true;
-            }
+        mMap.setOnMarkerClickListener(marker -> {
+            marker.showInfoWindow();
+            return true;
         });
 
 
@@ -464,14 +430,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 int tv_delete_top_boundry = tv_delete.getTop();
 
                 if (screenPosition.y >= tv_delete_top_boundry) {
-                    AppExecutor.getInstance().diskIO().execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            deletePlaceById(id);
-                            mCountriesVisited.remove(id);
-                            markerHashMap.remove(id);
-                            updateStatisticNumbers();
-                        }
+                    AppExecutor.getInstance().diskIO().execute(() -> {
+                        deletePlaceById(id);
+                        mCountriesVisited.remove(id);
+                        markerHashMap.remove(id);
+                        updateStatisticNumbers();
                     });
 
                 } else {
@@ -491,15 +454,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         mMap.setInfoWindowAdapter(adapter);
 
         //Set onclicklistener for InfoWindow
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
-                String markerId = marker.getSnippet();
-                int id = Integer.valueOf(markerId);
-                Intent intent = new Intent(getContext(), MarkerActivity.class);
-                intent.putExtra("MarkerID", id);
-                startActivity(intent);
-            }
+        mMap.setOnInfoWindowClickListener(marker -> {
+            String markerId = marker.getSnippet();
+            int id = Integer.valueOf(markerId);
+            Intent intent = new Intent(getContext(), MarkerActivity.class);
+            intent.putExtra("MarkerID", id);
+            startActivity(intent);
         });
 
 
@@ -552,11 +512,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     private String getMapStyle() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
-        String mapStyle = sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
-        return mapStyle;
+        return sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
     }
-
-
 
 
     @Override

@@ -36,7 +36,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * version 1 - using the SQLiteOpenHelper\SQLiteDatabase * to
      * version 2 - using Room
      */
-    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+    private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE `cities` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `city` TEXT NOT NULL, `country` TEXT NOT NULL," +
