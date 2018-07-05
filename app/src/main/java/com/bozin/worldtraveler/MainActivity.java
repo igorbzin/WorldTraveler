@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mFirstFragmentCommit = 0;
         Fragment mMapFragment = new MapFragment();
-        switchFragment(mFragmentManager, mMapFragment, "Map", 0);
+        switchFragment(mFragmentManager, mMapFragment, getString(R.string.fragment_map), 0);
 
 
         this.getSupportFragmentManager().addOnBackStackChangedListener(
@@ -119,23 +119,23 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             switch (id) {
                 case R.id.menu_item_maps:
                     Fragment maps = new MapFragment();
-                    switchFragment(mFragmentManager, maps, "Map", 0);
+                    switchFragment(mFragmentManager, maps, getString(R.string.fragment_map), 0);
                     break;
                 case R.id.menu_item_statistics:
                     Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
-                    switchFragment(mFragmentManager, statistics, "Statistics", 1);
+                    switchFragment(mFragmentManager, statistics, getString(R.string.fragment_statistics), 1);
                     break;
                 case R.id.menu_item_settings:
                     Fragment settings = new SettingsFragment();
-                    switchFragment(mFragmentManager, settings, "Settings", 2);
+                    switchFragment(mFragmentManager, settings, getString(R.string.fragment_settings), 2);
                     break;
                 case R.id.menu_item_login:
                     Fragment login = new LoginFragment();
-                    switchFragment(mFragmentManager, login, "Login", 3);
+                    switchFragment(mFragmentManager, login, getString(R.string.fragment_login), 3);
                     break;
                 default:
                     Fragment defaultmaps = new MapFragment();
-                    switchFragment(mFragmentManager, defaultmaps, "Map", 0);
+                    switchFragment(mFragmentManager, defaultmaps, getString(R.string.fragment_map), 0);
                     break;
             }
             return true;
@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
         fragmentTransaction.replace(R.id.container, mFragment);
-        
+
 
         if (mFirstFragmentCommit >= 1) {
             fragmentTransaction.addToBackStack(fragmentName);

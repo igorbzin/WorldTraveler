@@ -22,7 +22,10 @@
     <string name="placeautocomplete_hint">Search for places you have visited</string>
     <string name="snackbar_duplicate">You already added this place!</string>
     <string name="snackbar_place_added">You successfully added this place!</string>
-
+    <string name= "fragment_map">Map</string>
+    <string name="fragment_statistics">Statistics</string>
+    <string name="fragment_settings">Settings</string>
+    <string name="fragment_login">Login</string>
 
     <!--MarkerActivity-->
     <string name="sb_deleted_image">Picture deleted! </string>
