@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
         fragmentTransaction.replace(R.id.container, mFragment);
-
+        
 
         if (mFirstFragmentCommit >= 1) {
             fragmentTransaction.addToBackStack(fragmentName);

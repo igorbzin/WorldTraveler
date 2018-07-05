@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "140886678598",
+    "firebase_url": "https://worldtraveler-66cb7.firebaseio.com",
+    "project_id": "worldtraveler-66cb7",
+    "storage_bucket": "worldtraveler-66cb7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:140886678598:android:4f4708cee278c21e",
+        "android_client_info": {
+          "package_name": "com.bozin.worldtraveler"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "140886678598-gjfl3nrbjpjqi2l4se524prf8otklfho.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bozin.worldtraveler",
+            "certificate_hash": "f47f20afd1a12b3eb8e392f4013604790c689565"
+          }
+        },
+        {
+          "client_id": "140886678598-a4jv8emmeodojgqfe73npts3vnvbfgl8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqEy6Q3o7r2J6KTrwLksLaw6xgYlUm-as"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "140886678598-a4jv8emmeodojgqfe73npts3vnvbfgl8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
