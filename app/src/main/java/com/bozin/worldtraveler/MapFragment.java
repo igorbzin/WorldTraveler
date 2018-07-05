@@ -82,7 +82,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private MotionLayout motionLayout;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
-
+    private final String KEY_MARKER = "markers";
+    private Bundle bundle;
 
     MapFragmentStatisticsListener mCallback;
 
@@ -101,10 +102,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
         MapView mMapView = rootView.findViewById(R.id.google_map);
-
-        //Set up views
-        tv_delete = rootView.findViewById(R.id.tv_delete_marker);
-
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume();
         try {
@@ -114,6 +111,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         }
 
         mMapView.getMapAsync(this);
+
+        //Set up views
+        tv_delete = rootView.findViewById(R.id.tv_delete_marker);
+
         return rootView;
 
     }
@@ -122,8 +123,26 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
+        markerHashMap = new LinkedHashMap<>();
         mCountriesVisited = new LinkedHashMap<>();
+
+
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception
+        try {
+            mCallback = (MapFragmentStatisticsListener) Objects.requireNonNull(getContext());
+        } catch (ClassCastException e) {
+            throw new ClassCastException(Objects.requireNonNull(getContext()).toString()
+                    + " must implement MapfragmentStatisticsListener");
+        }
+
+        if(bundle != null){
+            markerHashMap = (LinkedHashMap<Integer, MarkerOptions>) bundle.getSerializable(KEY_MARKER);
+            setMarkers();
+        }
+
+
+
 
 
         //Set up location manager
@@ -145,12 +164,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             e.printStackTrace();
         }
 
-        markerHashMap = new LinkedHashMap<>();
-
-        //Retrieve markers from db
-        viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        mDb = AppDatabase.getInstance(getContext());
-        setupViewModel();
 
         //Set up add button
         mAddButton.setOnClickListener(v -> {
@@ -187,22 +200,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         //camera position
         mCameraPosition = 0;
 
-        //updateStatisticNumbers();
     }
 
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (MapFragmentStatisticsListener) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString()
-                    + " must implement MapfragmentStatisticsListener");
-        }
-    }
+
 
     @Override
     public void onResume() {
@@ -364,22 +365,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 AppExecutor.getInstance().diskIO().execute(() -> insertPlace(dbPlace));
             }
 
-            if (resultCode == Activity.RESULT_CANCELED) {
-                Snackbar noPlaceAdded = Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(R.id.drawer_layout), R.string.snackbar_no_place_added, Snackbar.LENGTH_LONG);
-                View sb_noPlaceAddedView = noPlaceAdded.getView();
-                sb_noPlaceAddedView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorAccent));
-                TextView tv_sb_noPlaceAdded = sb_noPlaceAddedView.findViewById(android.support.design.R.id.snackbar_text);
-                tv_sb_noPlaceAdded.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-
-            }
             onMapReady(mMap);
         }
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
-
         //Initialize the map
         mMap = googleMap;
 
@@ -520,6 +511,24 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public void onPause() {
         super.onPause();
         motionLayout.transitionToStart();
+        bundle = new Bundle();
+        bundle.putSerializable(KEY_MARKER, markerHashMap);
     }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        //Retrieve markers from db
+        viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        mDb = AppDatabase.getInstance(getContext());
+        setupViewModel();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+
 }
 

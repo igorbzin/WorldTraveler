@@ -3,6 +3,7 @@ package com.bozin.worldtraveler.Adapters;
 
 import android.content.Context;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintSet;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
@@ -57,11 +58,6 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
                     });
 
             snackbar.addCallback(new Snackbar.Callback(){
-                @Override
-                public void onShown(Snackbar sb) {
-                    super.onShown(sb);
-
-                }
 
                 @Override
                 public void onDismissed(Snackbar transientBottomBar, int event) {
@@ -89,16 +85,15 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
         }
     }
 
+    @NonNull
     @Override
-    public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.rv_item, parent, false);
         return new ImageViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(PictureRvAdapter.ImageViewHolder holder, int position) {
-
-
+    public void onBindViewHolder(@NonNull PictureRvAdapter.ImageViewHolder holder, int position) {
         Glide.with(mContext).load(mPicturePaths.get(position)).into(holder.selectedPicture);
     }
 
@@ -108,23 +103,20 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
     }
 
 
-    public class ImageViewHolder extends RecyclerView.ViewHolder {
+    class ImageViewHolder extends RecyclerView.ViewHolder {
 
-        public ImageView selectedPicture;
+         ImageView selectedPicture;
 
 
-        public ImageViewHolder(View itemView) {
+         ImageViewHolder(View itemView) {
             super(itemView);
             selectedPicture =  itemView.findViewById(R.id.rv_item_image);
 
 
-            selectedPicture.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int position = getAdapterPosition();
-                    Uri uri = mPicturePaths.get(position);
-                    mPictureOnClickHandler.onPictureClick(uri);
-                }
+            selectedPicture.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                Uri uri = mPicturePaths.get(position);
+                mPictureOnClickHandler.onPictureClick(uri);
             });
 
         }

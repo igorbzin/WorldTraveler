@@ -33,7 +33,6 @@
         android:layout_marginBottom="16dp"
         android:layout_marginStart="8dp"
         android:background="@drawable/ic_add_circle_black_24dp"
-        android:paddingHorizontal="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

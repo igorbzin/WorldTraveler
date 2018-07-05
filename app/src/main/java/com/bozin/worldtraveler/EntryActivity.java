@@ -33,7 +33,7 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
     private static final int REQUEST_PERMISSIONS = 100;
     private static final int MARSHMALLOW = 23;
 
-
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

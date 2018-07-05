@@ -7,7 +7,7 @@
 
     <!--AppIntro-->
     <string name="ai_welcome">Welcome to</string>
-    <string name="ai_welcome_text">Track the cities you\'ve visited and add photos of your journies. You will be able to see the number of cities visited in the "Statistics" section on the left. </string>
+    <string name="ai_welcome_text">Track the cities you\'ve visited and add photos of your journeys. You will be able to see the number of cities visited in the "Statistics" section on the left. </string>
     <string name="ai_add_city_title">Add city</string>
     <string name="ai_add_city_text">Simply click on the green "add" button in the lower right corner and then search for any city in the menu. You will need an internet connection for this. </string>
     <string name="ai_marker_title">Add and view photos</string>
@@ -21,8 +21,7 @@
     <string name="tv_delete">Delete</string>
     <string name="placeautocomplete_hint">Search for places you have visited</string>
     <string name="snackbar_duplicate">You already added this place!</string>
-    <string name="snackbar_place_added">You succesfully added this place!</string>
-    <string name="snackbar_no_place_added"> You didnt add any city!</string>
+    <string name="snackbar_place_added">You successfully added this place!</string>
 
 
     <!--MarkerActivity-->
@@ -63,5 +62,19 @@
 
     <!--Sharedpreferences-->
     <string name="sp_mapstyle_key">map_style_jsonarray</string>
+
+
+    <!--Login Fragment-->
+    <string name="tv_login_email">E-Mail</string>
+    <string name="tv_login_password">Password</string>
+    <string name="btn_login_sign_in">Sign In</string>
+    <string name="btn_login_register">Register</string>
+    <string name="btn_login_sign_out">Sign out</string>
+    <string name="sb_login_successfull">Successfull login!</string>
+
+
+    <string name="facebook_app_id">337061093492696</string>
+    <string name="fb_login_protocol_scheme">fb337061093492696</string>
+
 
 </resources>

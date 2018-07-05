@@ -1,8 +1,6 @@
 package com.bozin.worldtraveler;
 
 
-
-
 import android.content.Intent;
 
 
@@ -28,7 +26,6 @@ import android.util.Log;
 import android.view.Gravity;
 
 
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int mNumberOfCities;
     private int mNumberOfCountries;
     private String mMapstyle;
+    private int backStackCount;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -63,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         toolbar.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.colorPrimaryDark));
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, R.color.textWhite));
 
+        backStackCount = 0;
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
@@ -89,28 +89,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mNavigationView.getMenu().getItem(0).setChecked(true);
 
 
-
-
         mFirstFragmentCommit = 0;
         Fragment mMapFragment = new MapFragment();
-        switchFragment(mFragmentManager, mMapFragment, 0);
-
+        switchFragment(mFragmentManager, mMapFragment, "Map", 0);
 
 
         this.getSupportFragmentManager().addOnBackStackChangedListener(
                 () -> {
-                        Integer lastFragmentId;
-                        try {
-                            lastFragmentId = mBackstackItems.get(mBackstackItems.size()-2);
-                            mNavigationView.setCheckedItem(lastFragmentId);
-                        } catch (Exception e) {
-                            finish();
-                        }
+                    int currentBackStackCount = mFragmentManager.getBackStackEntryCount();
 
+                    if (currentBackStackCount > backStackCount) {
+                        backStackCount += 1;
+                    } else if (currentBackStackCount < backStackCount) {
+                        backStackCount -= 1;
+                        int backStackFragment = mBackstackItems.get(mBackstackItems.size() - 2);
+                        mNavigationView.getMenu().getItem(backStackFragment).setChecked(true);
+                        mBackstackItems.remove(mBackstackItems.size() - 1);
+                    }
 
                 });
 
-        mNavigationView.setNavigationItemSelectedListener(item -> {
+        mNavigationView.setNavigationItemSelectedListener(item ->
+
+        {
             item.setChecked(true);
             mDrawerLayout.closeDrawers();
 
@@ -118,50 +119,49 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             switch (id) {
                 case R.id.menu_item_maps:
                     Fragment maps = new MapFragment();
-                    switchFragment(mFragmentManager, maps, 0);
+                    switchFragment(mFragmentManager, maps, "Map", 0);
                     break;
                 case R.id.menu_item_statistics:
                     Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
-                    switchFragment(mFragmentManager, statistics, 1);
+                    switchFragment(mFragmentManager, statistics, "Statistics", 1);
                     break;
                 case R.id.menu_item_settings:
                     Fragment settings = new SettingsFragment();
-                    switchFragment(mFragmentManager, settings, 2);
+                    switchFragment(mFragmentManager, settings, "Settings", 2);
                     break;
                 case R.id.menu_item_login:
                     Fragment login = new LoginFragment();
-                    switchFragment(mFragmentManager, login, 3);
+                    switchFragment(mFragmentManager, login, "Login", 3);
                     break;
                 default:
                     Fragment defaultmaps = new MapFragment();
-                    switchFragment(mFragmentManager, defaultmaps, 0);
+                    switchFragment(mFragmentManager, defaultmaps, "Map", 0);
                     break;
             }
             return true;
         });
-
-
-            setupSharedPreferences();
-            mMapstyle = setMapStyle();
-
-
+        setupSharedPreferences();
+        mMapstyle = setMapStyle();
     }
 
 
-
-    private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, int navigationPosition) {
+    private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName, int navigationPosition) {
 
 
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
         fragmentTransaction.replace(R.id.container, mFragment);
-        if (mFirstFragmentCommit >= 1) {
-            fragmentTransaction.addToBackStack(null);
 
+
+        if (mFirstFragmentCommit >= 1) {
+            fragmentTransaction.addToBackStack(fragmentName);
         } else {
             mFirstFragmentCommit += 1;
         }
-        fragmentTransaction.commit();
+        fragmentTransaction.setReorderingAllowed(true)
+                .commit();
+
+
         mBackstackItems.add(navigationPosition);
     }
 
@@ -178,13 +178,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-
     @Override
     public void statisticsUpdate(int numberOfCities, int numberOfCountries) {
         mNumberOfCities = numberOfCities;
         mNumberOfCountries = numberOfCountries;
     }
-
 
 
     public String setMapStyle() {
@@ -200,21 +198,21 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             e.printStackTrace();
         }
         if (jsonArray != null) {
-            jsonArray =setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
-            jsonArray =setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames);
+            jsonArray = setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
+            jsonArray = setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString(getString(R.string.sp_mapstyle_key), jsonArray.toString());
             editor.putBoolean(getString(R.string.settings_show_cities_key), mShowCityNames);
             editor.putBoolean(getString(R.string.settings_show_countries_key), mShowCountryNames);
             editor.apply();
-            return  jsonArray.toString();
+            return jsonArray.toString();
         } else {
             return null;
         }
     }
 
 
-    private void setupSharedPreferences(){
+    private void setupSharedPreferences() {
         SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
@@ -222,18 +220,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.equals(getString(R.string.settings_show_countries_key) )){
+        if (key.equals(getString(R.string.settings_show_countries_key))) {
             setMapStyle();
-        } else if (key.equals(getString(R.string.settings_show_cities_key))){
+        } else if (key.equals(getString(R.string.settings_show_cities_key))) {
             setMapStyle();
         }
 
     }
 
 
-
-
-    private JSONArray setPreferenceValue(JSONArray jsonArray, String preference, boolean visibility){
+    private JSONArray setPreferenceValue(JSONArray jsonArray, String preference, boolean visibility) {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = null;
             try {
