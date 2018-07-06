@@ -26,7 +26,6 @@ import android.util.Log;
 import android.view.Gravity;
 
 
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,7 +40,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private DrawerLayout mDrawerLayout;
-    private int mFirstFragmentCommit;
     private NavigationView mNavigationView;
     private FragmentManager mFragmentManager;
     private ArrayList<Integer> mBackstackItems;
@@ -89,9 +87,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mNavigationView.getMenu().getItem(0).setChecked(true);
 
 
-        mFirstFragmentCommit = 0;
+        //Add first fragment
         Fragment mMapFragment = new MapFragment();
-        switchFragment(mFragmentManager, mMapFragment, getString(R.string.fragment_map), 0);
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+        fragmentTransaction.add(R.id.container, mMapFragment)
+                .setReorderingAllowed(true)
+                .commit();
+        mBackstackItems.add(0);
 
 
         this.getSupportFragmentManager().addOnBackStackChangedListener(
@@ -100,17 +103,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                     if (currentBackStackCount > backStackCount) {
                         backStackCount += 1;
-                    } else if (currentBackStackCount < backStackCount) {
+                    } else if (currentBackStackCount < backStackCount && mBackstackItems.size() - 2 > 0) {
                         backStackCount -= 1;
                         int backStackFragment = mBackstackItems.get(mBackstackItems.size() - 2);
                         mNavigationView.getMenu().getItem(backStackFragment).setChecked(true);
                         mBackstackItems.remove(mBackstackItems.size() - 1);
                     }
-
                 });
 
         mNavigationView.setNavigationItemSelectedListener(item ->
-
         {
             item.setChecked(true);
             mDrawerLayout.closeDrawers();
@@ -146,22 +147,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName, int navigationPosition) {
-
-
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
-        fragmentTransaction.replace(R.id.container, mFragment);
-
-
-        if (mFirstFragmentCommit >= 1) {
-            fragmentTransaction.addToBackStack(fragmentName);
-        } else {
-            mFirstFragmentCommit += 1;
-        }
-        fragmentTransaction.setReorderingAllowed(true)
+        fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .replace(R.id.container, mFragment)
+                .addToBackStack(fragmentName)
+                .setReorderingAllowed(true)
                 .commit();
-
-
         mBackstackItems.add(navigationPosition);
     }
 
@@ -169,12 +160,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-
-        /*for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-            fragment.onActivityResult(requestCode, resultCode, data);
-        }
-        */
     }
 
 

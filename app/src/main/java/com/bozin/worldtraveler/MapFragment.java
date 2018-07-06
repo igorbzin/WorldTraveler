@@ -1,6 +1,6 @@
 package com.bozin.worldtraveler;
 
-import android.Manifest;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
@@ -65,7 +65,7 @@ import java.util.Objects;
  * Created by igorb on 03/03/2018.
  */
 
-public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
+public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback{
 
     private final String TAG = "Room observer";
     public AppDatabase mDb;
@@ -89,6 +89,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     MapFragmentStatisticsListener mCallback;
     private FusedLocationProviderClient mFusedLocationClient;
     private Location lastKnownLocation;
+
+
 
 
     // Container Activity must implement this interface
@@ -203,11 +205,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        motionLayout.transitionToEnd();
-    }
 
     private void setupViewModel() {
         viewModel.getPlacesList().observe(this, places -> {
@@ -502,6 +499,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         return sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        motionLayout.transitionToEnd();
+    }
 
     @Override
     public void onPause() {
@@ -525,6 +527,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         super.onCreate(savedInstanceState);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getContext()));
     }
+
 
 
 }
