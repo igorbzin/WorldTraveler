@@ -43,10 +43,9 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -90,6 +89,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private FusedLocationProviderClient mFusedLocationClient;
     private Location lastKnownLocation;
 
+    private SupportMapFragment supportMapFragment;
+
 
 
 
@@ -106,16 +107,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
         motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
-        MapView mMapView = rootView.findViewById(R.id.google_map);
-        mMapView.onCreate(savedInstanceState);
-        mMapView.onResume();
-        try {
-            MapsInitializer.initialize(Objects.requireNonNull(getActivity()).getBaseContext());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        mMapView.getMapAsync(this);
+        if(supportMapFragment== null){
+            supportMapFragment = new SupportMapFragment();
+            supportMapFragment.getMapAsync(this);
+        }
+        getChildFragmentManager().beginTransaction().replace(R.id.google_map, supportMapFragment).commit();
 
         //Set up views
         tv_delete = rootView.findViewById(R.id.tv_delete_marker);

@@ -8,7 +8,7 @@
     tools:showPaths="true"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <com.google.android.gms.maps.MapView
+    <FrameLayout
         android:id="@+id/google_map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

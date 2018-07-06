@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                     if (currentBackStackCount > backStackCount) {
                         backStackCount += 1;
-                    } else if (currentBackStackCount < backStackCount && mBackstackItems.size() - 2 > 0) {
+                    } else if (currentBackStackCount < backStackCount && mBackstackItems.size() - 2 >= 0) {
                         backStackCount -= 1;
                         int backStackFragment = mBackstackItems.get(mBackstackItems.size() - 2);
                         mNavigationView.getMenu().getItem(backStackFragment).setChecked(true);
