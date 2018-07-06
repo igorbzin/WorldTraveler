@@ -35,7 +35,7 @@ import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
  * Created by igorb on 20.12.2017.
  */
 
-public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureOnClickHandler {
+public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureActionHandler {
 
 
     private ArrayList<Uri> mPictureUris;
@@ -46,7 +46,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     MarkerViewModel viewModel;
     private AppDatabase db;
 
-    private static ConstraintLayout constraintLayout_start;
+    private ConstraintLayout constraintLayout_start;
     private ConstraintSet constraintSetStart = new ConstraintSet();
     private ConstraintSet constraintSetEnd = new ConstraintSet();
     private ConstraintSet constraintSetSnackbar = new ConstraintSet();
@@ -122,7 +122,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
             @Override
             public synchronized void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 beginTransition(constraintSetSnackbar, 300);
-                mAdapter.onItemRemove(viewHolder, mPicturesRV, constraintSetEnd);
+                mAdapter.onItemRemove(viewHolder, mPicturesRV);
             }
 
 
@@ -130,7 +130,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
         Button mBtnAddImage = findViewById(R.id.btn_add_images);
         mBtnAddImage.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
             startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_PHOTO_CODE);
@@ -142,32 +142,26 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (data != null) {
-
-            if (data.getData() != null) {
+        //if (data != null) {
+            /*if (data.getData() != null) {
                 Uri pictureUri = data.getData();
-                getContentResolver().takePersistableUriPermission(pictureUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 mPictureUris.add(pictureUri);
-            } else {
-                if (data.getClipData() != null) {
-
-
-                    ClipData mClipData = data.getClipData();
-
-                    for (int i = 0; i < mClipData.getItemCount(); i++) {
-                        ClipData.Item item = mClipData.getItemAt(i);
-                        Uri uri = item.getUri();
-                        getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        mPictureUris.add(uri);
-                    }
-                }
             }
-
-
-            mAdapter.updatePictures(mPictureUris);
-            AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
-
+            else {*/
+        if (data.getClipData() != null) {
+            ClipData mClipData = data.getClipData();
+            for (int i = 0; i < mClipData.getItemCount(); i++) {
+                ClipData.Item item = mClipData.getItemAt(i);
+                Uri uri = item.getUri();
+                //getContentResolver().takePersistableUriPermission(uri, flags);
+                mPictureUris.add(uri);
+            }
         }
+
+
+        mAdapter.updatePictures(mPictureUris);
+        AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
+
 
     }
 
@@ -189,14 +183,17 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
-
+    @Override
+    public void onPictureSwipe(int duration) {
+        beginTransition(constraintSetEnd, duration);
+    }
 
     //Get Picture Uris from DB
     private ArrayList<Uri> getPicturePaths() {
         Place place = viewModel.getPlace();
         ArrayList<Uri> picturePathList = new ArrayList<>();
         String pictureUriString = place.getPicture_uris();
-        if (pictureUriString != null) {
+        if (pictureUriString != null && !pictureUriString.equals("")) {
             List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
             for (int i = 0; i < pathStringsArrayList.size(); i++) {
                 String path = pathStringsArrayList.get(i);
@@ -234,7 +231,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
-    public static void beginTransition(ConstraintSet constraintSet, int duration) {
+    public void beginTransition(ConstraintSet constraintSet, int duration) {
         AutoTransition autoTransition = new AutoTransition();
         autoTransition.setDuration(duration);
         android.support.transition.TransitionManager.beginDelayedTransition(constraintLayout_start, autoTransition);

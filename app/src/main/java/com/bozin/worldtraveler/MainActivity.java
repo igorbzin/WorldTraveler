@@ -26,6 +26,7 @@ import android.util.Log;
 import android.view.Gravity;
 
 
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,7 +57,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_main);
-
         Toolbar toolbar = findViewById(R.id.tb_actionbar);
         this.setSupportActionBar(toolbar);
         toolbar.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.colorPrimaryDark));

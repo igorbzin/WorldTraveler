@@ -1,5 +1,7 @@
 package com.bozin.worldtraveler;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -9,10 +11,8 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Address;
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -29,12 +29,15 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
 import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
@@ -50,7 +53,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,7 +72,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private GoogleMap mMap;
     private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
     private LatLng mLatLong;
-    private Location location;
     private TextView tv_delete;
     private Button mAddButton;
     private Animation mStartFadeInAnimation;
@@ -86,6 +87,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private Bundle bundle;
 
     MapFragmentStatisticsListener mCallback;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private Location lastKnownLocation;
 
 
     // Container Activity must implement this interface
@@ -120,6 +123,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -136,34 +140,35 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                     + " must implement MapfragmentStatisticsListener");
         }
 
-        if(bundle != null){
-            markerHashMap = (LinkedHashMap<Integer, MarkerOptions>) bundle.getSerializable(KEY_MARKER);
+        if (bundle != null) {
+            try {
+                markerHashMap = (LinkedHashMap<Integer, MarkerOptions>) bundle.getSerializable(KEY_MARKER);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             setMarkers();
         }
 
 
-
-
-
         //Set up location manager
-        LocationManager locationManager = (LocationManager) Objects.requireNonNull(getActivity()).getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        String provider;
-
-        try {
-            if (locationManager != null) {
-                provider = locationManager.getBestProvider(criteria, false);
-                location = locationManager.getLastKnownLocation(provider);
-            }
-        } catch (NullPointerException | SecurityException e) {
-            e.printStackTrace();
-        }
-        try {
-            mLatLong = new LatLng(location.getLatitude(), location.getLongitude());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        // Get last known recent location using new Google Play Services SDK (v11+)
+        mFusedLocationClient.getLastLocation()
+                .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        // GPS location can be null if GPS is switched off
+                        lastKnownLocation = task.getResult();
+                        if (lastKnownLocation != null) {
+                            mLatLong = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                        }
+                    } else {
+                        Toast.makeText(getActivity(), "NO LOCATION DETECTED", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.d("MapDemoActivity", "Error trying to get last GPS location");
+                    e.printStackTrace();
+                });
+        mFusedLocationClient.getLastLocation();
 
         //Set up add button
         mAddButton.setOnClickListener(v -> {
@@ -172,11 +177,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 AutocompleteFilter filter = new AutocompleteFilter.Builder().setTypeFilter(5).build();
                 ActivityOptionsCompat options =
                         ActivityOptionsCompat.makeCustomAnimation(Objects.requireNonNull(getContext()), R.anim.slide_in, R.anim.slide_out);
-                /*
-                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-
-                startActivityForResult(builder.build(getActivity()), REQUEST_CODE_SEARCH_ACTIVITY, options.toBundle());
-                */
 
                 Intent intent =
                         new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
@@ -203,8 +203,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-
-
     @Override
     public void onResume() {
         super.onResume();
@@ -222,7 +220,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             }
         });
     }
-
 
     public MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
         String city = place.getCity_name();
@@ -319,7 +316,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                     } else {
                         city = place.getName().toString();
                     }
-
                     try {
                         country = address.get(0).getCountryName();
                     } catch (Exception e) {
@@ -527,6 +523,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getContext()));
     }
 
 

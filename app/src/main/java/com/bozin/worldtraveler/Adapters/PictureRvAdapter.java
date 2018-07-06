@@ -26,35 +26,35 @@ import java.util.ArrayList;
 
 public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.ImageViewHolder> {
 
-    private final PictureOnClickHandler mPictureOnClickHandler;
+    private final PictureActionHandler mPictureActionHandler;
     private Context mContext;
     private ArrayList<Uri> mPicturePaths;
     final private Object LOCK = new Object();
 
 
-    public PictureRvAdapter(Context c, ArrayList<Uri> picturePaths, PictureOnClickHandler clickHandler) {
-        mPictureOnClickHandler = clickHandler;
+    public PictureRvAdapter(Context c, ArrayList<Uri> picturePaths, PictureActionHandler clickHandler) {
+        mPictureActionHandler = clickHandler;
         mContext = c;
         mPicturePaths = picturePaths;
     }
 
-    public interface PictureOnClickHandler {
+    public interface PictureActionHandler {
         void onPictureClick(Uri uri);
+        void onPictureSwipe(int duration);
     }
 
 
-    public void onItemRemove(final RecyclerView.ViewHolder viewHolder, final RecyclerView recyclerView, ConstraintSet set) {
+    public void onItemRemove(final RecyclerView.ViewHolder viewHolder, final RecyclerView recyclerView) {
         synchronized (LOCK){
             final int adapterPosition = viewHolder.getAdapterPosition();
             final Uri mUri = mPicturePaths.get(adapterPosition);
-            final ConstraintSet constraintSet = set;
             Snackbar snackbar = Snackbar
                     .make(recyclerView , R.string.sb_deleted_image, Snackbar.LENGTH_LONG)
                     .setAction("UNDO", view -> {
                         mPicturePaths.add(adapterPosition, mUri);
                         notifyItemInserted(adapterPosition);
-                        recyclerView.smoothScrollToPosition(adapterPosition);
-                        MarkerActivity.beginTransition(constraintSet,300);
+                        recyclerView.scrollToPosition(adapterPosition);
+                        mPictureActionHandler.onPictureSwipe(300);
                     });
 
             snackbar.addCallback(new Snackbar.Callback(){
@@ -63,7 +63,7 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
                 public void onDismissed(Snackbar transientBottomBar, int event) {
                     super.onDismissed(transientBottomBar, event);
                     if(event== Snackbar.Callback.DISMISS_EVENT_TIMEOUT || event == Snackbar.Callback.DISMISS_EVENT_ACTION){
-                        MarkerActivity.beginTransition(constraintSet,300);
+                        mPictureActionHandler.onPictureSwipe(300);
                     }
                 }
             });
@@ -116,7 +116,7 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
             selectedPicture.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 Uri uri = mPicturePaths.get(position);
-                mPictureOnClickHandler.onPictureClick(uri);
+                mPictureActionHandler.onPictureClick(uri);
             });
 
         }
