@@ -56,7 +56,6 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
             }
 
         } else {
-            //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             EntryActivity.this.finish();
         }
     }
@@ -111,8 +110,7 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
 
                 //  Launch app intro
                 final Intent i = new Intent(EntryActivity.this, IntroActivity.class);
-
-                runOnUiThread(() -> startActivity(i));
+                startActivity(i);
 
                 //  Make a new preferences editor
                 SharedPreferences.Editor e = getPrefs.edit();

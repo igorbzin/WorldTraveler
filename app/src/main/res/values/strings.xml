@@ -68,12 +68,16 @@
 
 
     <!--Login Fragment-->
+    <string name="tv_login_register">Login</string>
+    <string name="tv_login_register_email">Or register using your email!</string>
+    <string name="tv_login_pwd_forgotten">Forgot your password?</string>
     <string name="tv_login_email">E-Mail</string>
     <string name="tv_login_password">Password</string>
-    <string name="btn_login_sign_in">Sign In</string>
+    <string name="tv_no_user_account">No user account? Register now!</string>
+    <string name="btn_login">Sign in</string>
     <string name="btn_login_register">Register</string>
+    <string name="sb_login_successfull">Successful login!</string>
     <string name="btn_login_sign_out">Sign out</string>
-    <string name="sb_login_successfull">Successfull login!</string>
 
 
     <string name="facebook_app_id">337061093492696</string>

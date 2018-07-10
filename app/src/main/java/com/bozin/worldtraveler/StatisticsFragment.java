@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Objects;
+
 /**
  * Created by igorb on 03/03/2018.
  */
@@ -17,7 +19,7 @@ import android.widget.TextView;
 public class StatisticsFragment extends Fragment {
 
 
-    public static StatisticsFragment newInstance(int numberOfCities, int numberOfCountries){
+    public static StatisticsFragment newInstance(int numberOfCities, int numberOfCountries) {
         StatisticsFragment statisticsFragment = new StatisticsFragment();
         Bundle args = new Bundle();
         args.putInt("numberOfCities", numberOfCities);
@@ -42,9 +44,9 @@ public class StatisticsFragment extends Fragment {
     }
 
 
-
-
-
-
-
+    @Override
+    public void onResume() {
+        super.onResume();
+        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_statistics);
+    }
 }

@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName, int navigationPosition) {
+    public void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName, int navigationPosition) {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 .replace(R.id.container, mFragment)
@@ -288,4 +288,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
+    @Override
+    public void onBackPressed() {
+
+        super.onBackPressed();
+    }
 }

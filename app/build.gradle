@@ -54,7 +54,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:15.0.1'
     // Facebook Android SDK (only required for Facebook Login)
     // Used in FacebookLoginActivity.
-    //implementation 'com.facebook.android:facebook-login:4.32.0'
+    implementation 'com.facebook.android:facebook-login:4.32.0'
 
 
     //Room
