@@ -84,4 +84,13 @@
     <string name="fb_login_protocol_scheme">fb337061093492696</string>
 
 
+    <!-- Register fragment-->
+    <string name="register_email_de">Email</string>
+    <string name="register_pwd_de">Password</string>
+    <string name="register_pwd_repeat_de">Repeat password</string>
+    <string name="register_name_de">Name</string>
+    <string name="register_first_name_de">Last name</string>
+    <string name="register_birthday_de">Birthday</string>
+
+
 </resources>

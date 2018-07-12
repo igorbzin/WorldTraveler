@@ -57,12 +57,12 @@
             android:layout_height="40dp"
             android:layout_marginLeft="56dp"
             android:layout_marginRight="56dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="64dp"
             android:hint="@string/register_name_de"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/et_register_first_name" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
             android:id="@+id/et_register_first_name"
@@ -70,12 +70,12 @@
             android:layout_height="40dp"
             android:layout_marginLeft="56dp"
             android:layout_marginRight="56dp"
-            android:layout_marginTop="64dp"
+            android:layout_marginTop="16dp"
             android:hint="@string/register_first_name_de"
-            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/et_register_name" />
 
         <EditText
             android:id="@+id/et_register_birthday"
@@ -83,13 +83,12 @@
             android:layout_height="40dp"
             android:layout_marginLeft="56dp"
             android:layout_marginRight="56dp"
-            android:layout_marginTop="16dp"
             android:focusable="false"
             android:hint="@string/register_birthday_de"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/et_register_name" />
+            tools:layout_editor_absoluteY="176dp" />
 
 
         <Button

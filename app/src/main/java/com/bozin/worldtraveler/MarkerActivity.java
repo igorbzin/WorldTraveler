@@ -81,7 +81,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
         new AsyncTask<Integer, Void, Void>() {
-
             @Override
             protected Void doInBackground(Integer... integers) {
                 db = AppDatabase.getInstance(MarkerActivity.this);
@@ -94,7 +93,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 mPictureUris = getPicturePaths();
-
                 if (mAdapter != null) {
                     mAdapter.updatePictures(mPictureUris);
                 } else {
@@ -157,7 +155,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                 mPictureUris.add(uri);
             }
         }
-
 
         mAdapter.updatePictures(mPictureUris);
         AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));

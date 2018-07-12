@@ -515,8 +515,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         super.onAttach(context);
         //Retrieve markers from db
         viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        mDb = AppDatabase.getInstance(getContext());
-        setupViewModel();
+        AppExecutor.getInstance().diskIO().execute(() -> {
+            mDb = AppDatabase.getInstance(getContext());
+            setupViewModel();
+        });
     }
 
     @Override
