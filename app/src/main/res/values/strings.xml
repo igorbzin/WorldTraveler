@@ -79,6 +79,10 @@
     <string name="sb_login_successfull">Successful login!</string>
     <string name="btn_login_sign_out">Sign out</string>
 
+    <string name="error_invalid_email">The email address is badly formatted.</string>
+    <string name="error_invalid_pwd">The password is invalid or the user does not have a password.</string>
+    <string name="error_invalid_user">There is no user corresponding to this email. </string>
+    <string name="error_no_internet_connection">You have no internet connection, please reconnect and try again!</string>
 
     <string name="facebook_app_id">337061093492696</string>
     <string name="fb_login_protocol_scheme">fb337061093492696</string>

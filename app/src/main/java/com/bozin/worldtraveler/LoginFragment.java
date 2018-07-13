@@ -10,12 +10,15 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bozin.worldtraveler.databinding.FragmentLoginBinding;
@@ -31,12 +34,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
@@ -88,12 +91,12 @@ public class LoginFragment extends Fragment implements
 
         // Initialize Facebook Login button
         CallbackManager mCallbackManager = CallbackManager.Factory.create();
-        LoginButton loginButton =  loginBinding.loginSocialFacebook;
+        LoginButton loginButton = loginBinding.loginSocialFacebook;
         loginButton.setReadPermissions("email", "public_profile");
         loginButton.setFragment(this);
         loginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
             @Override
-            public void onSuccess(LoginResult loginResult)  {
+            public void onSuccess(LoginResult loginResult) {
                 Log.d(TAG, "facebook:onSuccess:" + loginResult);
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
@@ -112,18 +115,23 @@ public class LoginFragment extends Fragment implements
         });
 
 
-       loginBinding.btnRegister.setOnClickListener(view1 -> {
-           RegisterFragment registerFragment = new RegisterFragment();
-           FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
-           fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                   .replace(R.id.container, registerFragment)
-                   .setReorderingAllowed(true)
-                   .commit();
-       });
+        loginBinding.btnRegister.setOnClickListener(view1 -> {
+            RegisterFragment registerFragment = new RegisterFragment();
+            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
+            fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                    .replace(R.id.container, registerFragment)
+                    .setReorderingAllowed(true)
+                    .commit();
+        });
 
         loginBinding.btnSignIn.setOnClickListener(v -> {
+            if (!validateForm()) {
+                return;
+            }
+
             email = etEmail.getText().toString();
             password = etPassword.getText().toString();
+
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
                         if (task.isSuccessful()) {
@@ -133,17 +141,52 @@ public class LoginFragment extends Fragment implements
                             updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
-                            Log.w(TAG, "signInWithEmail:failure", task.getException());
-                            Toast.makeText(getActivity(), "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+
+                            try {
+                                throw Objects.requireNonNull(task.getException());
+
+                            } catch (FirebaseAuthException e) {
+                                Log.w(TAG, "signInWithEmail:failure", task.getException());
+                                String errorCode = e.getErrorCode();
+                                switch (errorCode) {
+                                    case "ERROR_INVALID_EMAIL":
+                                        etEmail.setError(getString(R.string.error_invalid_email));
+                                        break;
+                                    case "ERROR_WRONG_PASSWORD":
+                                        etEmail.setError(getString(R.string.error_invalid_pwd));
+                                        break;
+                                    case "ERROR_USER_NOT_FOUND":
+                                        etEmail.setError(getString(R.string.error_invalid_user));
+                                        break;
+                                    default:
+                                        break;
+                                }
+
+                            } catch (FirebaseNetworkException e) {
+                                Snackbar error = makeSnackBar(getString(R.string.error_no_internet_connection));
+                                hideKeyboard();
+                                error.show();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                             updateUI(null);
                         }
                     });
+
         });
 
 
-
         return view;
+    }
+
+
+    private Snackbar makeSnackBar(String text) {
+        Snackbar sb_error = Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(R.id.cl_login_fragment), text, Snackbar.LENGTH_LONG);
+        View sb_errorView = sb_error.getView();
+        TextView tv_sb_error = sb_errorView.findViewById(android.support.design.R.id.snackbar_text);
+        tv_sb_error.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        sb_errorView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorAccent));
+        return sb_error;
     }
 
     @Override
@@ -195,10 +238,11 @@ public class LoginFragment extends Fragment implements
     }
 
 
-    private static void hideKeyboardFrom(Context context, View view) {
-        InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
+    private void hideKeyboard() {
+
+        InputMethodManager imm = (InputMethodManager) Objects.requireNonNull(getActivity()).getSystemService(Activity.INPUT_METHOD_SERVICE);
         if (imm != null) {
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            imm.hideSoftInputFromWindow(getActivity().findViewById(R.id.cl_login_fragment).getWindowToken(), 0);
         }
     }
 
@@ -224,31 +268,26 @@ public class LoginFragment extends Fragment implements
     }
 
 
-
-
     private void handleFacebookAccessToken(AccessToken token) {
         Log.d(TAG, "handleFacebookAccessToken:" + token);
 
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
         mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(Objects.requireNonNull(getActivity()), new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d(TAG, "signInWithCredential:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            updateUI(user);
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w(TAG, "signInWithCredential:failure", task.getException());
-                            Toast.makeText(getActivity(), "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
-                            updateUI(null);
-                        }
-
-                        // ...
+                .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success, update UI with the signed-in user's information
+                        Log.d(TAG, "signInWithCredential:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        updateUI(user);
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        Toast.makeText(getActivity(), "Authentication failed.",
+                                Toast.LENGTH_SHORT).show();
+                        updateUI(null);
                     }
+
+                    // ...
                 });
     }
 
@@ -264,6 +303,28 @@ public class LoginFragment extends Fragment implements
             signIn();
         }
 
+    }
+
+    private boolean validateForm() {
+        boolean valid = true;
+
+        String email = etEmail.getText().toString();
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Required.");
+            valid = false;
+        } else {
+            etEmail.setError(null);
+        }
+
+        String password = etPassword.getText().toString();
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Required.");
+            valid = false;
+        } else {
+            etPassword.setError(null);
+        }
+
+        return valid;
     }
 
 
