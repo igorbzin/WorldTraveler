@@ -7,6 +7,9 @@ import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.clustering.ClusterItem;
+
 @Entity(tableName = "cities")
 public class Place {
 
@@ -98,4 +101,5 @@ public class Place {
     public void setPicture_uris(String picture_uris) {
         this.picture_uris = picture_uris;
     }
+
 }

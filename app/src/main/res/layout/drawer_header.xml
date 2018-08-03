@@ -9,7 +9,7 @@
     android:padding="20dp">
 
     <ImageView
-        android:id="@+id/iv_white_green_logo"
+        android:id="@+id/iv_drawer_icon"
         android:layout_width="wrap_content"
         android:layout_height="124dp"
         android:layout_marginStart="4dp"

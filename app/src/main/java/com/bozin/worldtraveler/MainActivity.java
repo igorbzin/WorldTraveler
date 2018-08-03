@@ -132,11 +132,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     break;
                 case R.id.menu_item_login:
                     Fragment login = new LoginFragment();
-                    switchFragment(mFragmentManager, login, getString(R.string.fragment_login), 3);
+                    switchFragment(mFragmentManager, login, getString(R.string.fragment_user), 3);
                     break;
+                case R.id.menu_item_user:
+                    Fragment user = new LoginFragment();
+                    switchFragment(mFragmentManager, user, getString(R.string.fragment_user), 3);
                 default:
-                    Fragment defaultmaps = new MapFragment();
-                    switchFragment(mFragmentManager, defaultmaps, getString(R.string.fragment_map), 0);
+                    Fragment defaultLogin = new LoginFragment();
+                    switchFragment(mFragmentManager, defaultLogin, getString(R.string.fragment_user), 0);
                     break;
             }
             return true;

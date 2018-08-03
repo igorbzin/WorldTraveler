@@ -126,6 +126,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_map);
         markerHashMap = new LinkedHashMap<>();
         mCountriesVisited = new LinkedHashMap<>();
 
