@@ -53,7 +53,6 @@ public class StatisticsFragment extends Fragment {
         float percentage_traveled = (((float) countriesNumber) / totalNumberOfCountries) * 100;
 
 
-
         Resources res = getResources();
         Drawable drawable = res.getDrawable(R.drawable.progress);
         final ProgressBar mProgress = rootView.findViewById(R.id.pb_percentage_world);
@@ -61,28 +60,31 @@ public class StatisticsFragment extends Fragment {
         mProgress.setSecondaryProgress(100); // Secondary Progress
         mProgress.setMax(100); // Maximum Progress
         mProgress.setProgressDrawable(drawable);
+        if (percentage_traveled == 0.0) {
+            mProgress.setProgress(pStatus);
+            tv_percentage.setText("0%");
+        } else {
+            new Thread(() -> {
+                // TODO Auto-generated method stub
+                while (pStatus < percentage_traveled) {
+                    pStatus += 1;
 
+                    handler.post(() -> {
+                        // TODO Auto-generated method stub
+                        mProgress.setProgress(pStatus);
+                        tv_percentage.setText(pStatus + "%");
 
-        new Thread(() -> {
-            // TODO Auto-generated method stub
-            while (pStatus < percentage_traveled) {
-                pStatus += 1;
-
-                handler.post(() -> {
-                    // TODO Auto-generated method stub
-                    mProgress.setProgress(pStatus);
-                    tv_percentage.setText(pStatus + "%");
-
-                });
-                try {
-                    // Sleep for 200 milliseconds.
-                    // Just to display the progress slowly
-                    Thread.sleep(150); //thread will take approx 1.5 seconds to finish
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    });
+                    try {
+                        // Sleep for 200 milliseconds.
+                        // Just to display the progress slowly
+                        Thread.sleep(150); //thread will take approx 1.5 seconds to finish
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
+            }).start();
+        }
 
 
         if (getArguments() != null) {

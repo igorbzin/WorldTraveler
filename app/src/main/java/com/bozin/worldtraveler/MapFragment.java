@@ -354,6 +354,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 final com.bozin.worldtraveler.data.Place dbPlace = new com.bozin.worldtraveler.data.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
                 AppExecutor.getInstance().diskIO().execute(() -> insertPlace(dbPlace));
+            } else {
+                Toast.makeText(getContext(), "There was an error adding the city, please try again!", Toast.LENGTH_LONG).show();
             }
 
             onMapReady(mMap);
