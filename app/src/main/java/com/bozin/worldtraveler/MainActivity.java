@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         fragmentTransaction.add(R.id.container, mapFragment)
                 .setReorderingAllowed(true)
                 .commit();
-        mBackstackItems.add(0);
+        mBackstackItems.add(3);
 
 
         this.getSupportFragmentManager().addOnBackStackChangedListener(
@@ -374,15 +374,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSignedOut() {
-        getSupportFragmentManager().popBackStackImmediate();
+
         LoginFragment loginFragment = LoginFragment.newInstance(1);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.container, loginFragment)
-                .addToBackStack(getString(R.string.fragment_user))
+                .setReorderingAllowed(true)
                 .commit();
-
+        
         createMenu();
         loginFragment.signOut();
-
     }
 }

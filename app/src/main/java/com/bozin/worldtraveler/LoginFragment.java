@@ -43,6 +43,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.Objects;
 
@@ -212,6 +214,11 @@ public class LoginFragment extends Fragment implements
         if (signingOut != 1) {
             mAuth = FirebaseAuth.getInstance();
             currentUser = mAuth.getCurrentUser();
+            if(currentUser!= null){
+                currentUser.getUid();
+                currentUser.getMetadata();
+                currentUser.getDisplayName();
+            }
         }
     }
 
@@ -227,7 +234,6 @@ public class LoginFragment extends Fragment implements
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
@@ -235,8 +241,12 @@ public class LoginFragment extends Fragment implements
                         // Sign in success, update UI with the signed-in user's information
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = mAuth.getCurrentUser();
+                        FirebaseDatabase database = FirebaseDatabase.getInstance();
+                        DatabaseReference mdatabaseReference = database.getReference("/user");
+                        mdatabaseReference.setValue(user.getUid());
                         updateUI(user);
-                        refreshFragment();
+                        // Write a message to the database
+
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
@@ -361,13 +371,7 @@ public class LoginFragment extends Fragment implements
         return valid;
     }
 
-    private void refreshFragment() {
-        LoginFragment loginFragment = new LoginFragment();
-        FragmentTransaction fragmentTransaction = Objects.requireNonNull(Objects.requireNonNull(getActivity()).getSupportFragmentManager()).beginTransaction();
-        fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                .replace(R.id.container, loginFragment)
-                .commit();
-    }
+
 
     @Override
     public void onResume() {
