@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+
 /**
  * Created by igorb on 03/03/2018.
  */
@@ -67,7 +68,6 @@ import java.util.Objects;
 public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback{
 
     private final String TAG = "Room observer";
-    public AppDatabase mDb;
     private GoogleMap mMap;
     private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
     private LatLng mLatLong;
@@ -76,7 +76,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private Animation mStartFadeInAnimation;
     private Animation mStartFadeOutAnimation;
     private int mCameraPosition;
-    public LinkedHashMap<Integer, MarkerOptions> markerHashMap;
+    private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private LinkedHashMap<Integer, String> mCountriesVisited;
     private PlacesViewModel viewModel;
     private MotionLayout motionLayout;
@@ -85,13 +85,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private final String KEY_MARKER = "markers";
     private Bundle bundle;
 
-    MapFragmentStatisticsListener mCallback;
+    private MapFragmentStatisticsListener mCallback;
     private FusedLocationProviderClient mFusedLocationClient;
     private Location lastKnownLocation;
 
     private SupportMapFragment supportMapFragment;
-
-
 
 
     // Container Activity must implement this interface
@@ -216,7 +214,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         });
     }
 
-    public MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
+    private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
         String city = place.getCity_name();
         String country = place.getCountry_name();
         double latitude = place.getLatitude();
@@ -234,7 +232,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    public void createMarkersFromPlaces() {
+    private void createMarkersFromPlaces() {
         for (int i = 0; i < placesList.size(); i++) {
             com.bozin.worldtraveler.data.Place place = placesList.get(i);
             MarkerOptions markerOptions = createMarkerOptions(place);
@@ -244,7 +242,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     //Function to set all markers retrieved from database
-    public void setMarkers() {
+    private void setMarkers() {
         mMap.clear();
         ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
         for (int i = 0; i < markerOptionsList.size(); i++) {
@@ -254,17 +252,17 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    public void insertPlace(com.bozin.worldtraveler.data.Place place) {
+    private void insertPlace(com.bozin.worldtraveler.data.Place place) {
         viewModel.insertPlace(place);
     }
 
 
-    public void deletePlaceById(int id) {
+    private void deletePlaceById(int id) {
         viewModel.deletePlaceById(id);
     }
 
 
-    public void refresh() {
+    private void refresh() {
         String mapStyle = getMapStyle();
         //Style the map
         try {
@@ -367,6 +365,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         //Initialize the map
         mMap = googleMap;
 
+
         //Setting default map rules
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
@@ -378,6 +377,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             marker.showInfoWindow();
             return true;
         });
+
 
 
         //Set onclicklistener for Marker dragging to delete it
@@ -482,7 +482,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
             mCameraPosition = 1;
-
         }
     }
 
@@ -519,7 +518,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         //Retrieve markers from db
         viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
         AppExecutor.getInstance().diskIO().execute(() -> {
-            mDb = AppDatabase.getInstance(getContext());
+            AppDatabase.getInstance(getContext());
             setupViewModel();
         });
     }
@@ -529,6 +528,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         super.onCreate(savedInstanceState);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getContext()));
     }
+
+
 
 
 

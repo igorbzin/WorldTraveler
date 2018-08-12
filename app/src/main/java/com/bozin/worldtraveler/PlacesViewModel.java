@@ -12,7 +12,7 @@ import com.bozin.worldtraveler.data.PlacesRepository;
 import java.util.List;
 
 
-public class PlacesViewModel extends AndroidViewModel {
+class PlacesViewModel extends AndroidViewModel {
 
     private PlacesRepository mPlacesRepository;
     private LiveData<List<Place>> placesList;

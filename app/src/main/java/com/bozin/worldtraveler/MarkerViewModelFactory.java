@@ -6,7 +6,7 @@ import android.support.annotation.NonNull;
 
 import com.bozin.worldtraveler.data.AppDatabase;
 
-public class MarkerViewModelFactory extends ViewModelProvider.NewInstanceFactory {
+class MarkerViewModelFactory extends ViewModelProvider.NewInstanceFactory {
 
     // COMPLETED (2) Add two member variables. One for the database and one for the taskId
     private final AppDatabase mDb;

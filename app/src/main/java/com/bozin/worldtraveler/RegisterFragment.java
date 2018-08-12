@@ -55,8 +55,8 @@ public class RegisterFragment extends Fragment {
 
             String emailStr = email.getText().toString();
             String passwordStr = password.getText().toString();
-            String passwordReprßeatStr = passwordRepeat.getText().toString();
-            if(passwordStr.equals(passwordReprßeatStr)){
+            String passwordRepeatStr = passwordRepeat.getText().toString();
+            if(passwordStr.equals(passwordRepeatStr)){
                 mAuth.createUserWithEmailAndPassword(emailStr, passwordStr)
                         .addOnCompleteListener(Objects.requireNonNull(getActivity()), new OnCompleteListener<AuthResult>() {
                             @Override

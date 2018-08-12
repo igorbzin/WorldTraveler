@@ -43,7 +43,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private PictureRvAdapter mAdapter;
     private int mCurrentMarkerID;
     public final static int PICK_PHOTO_CODE = 11;
-    MarkerViewModel viewModel;
+    private MarkerViewModel viewModel;
     private AppDatabase db;
 
     private ConstraintLayout constraintLayout_start;
@@ -202,7 +202,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
     //Update picture URIS to make deleting of pictures possible
-    public void updatePicturePaths(String picturePaths) {
+    private void updatePicturePaths(String picturePaths) {
         viewModel.updatePicturePaths(picturePaths);
     }
 
@@ -228,14 +228,14 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
-    public void beginTransition(ConstraintSet constraintSet, int duration) {
+    private void beginTransition(ConstraintSet constraintSet, int duration) {
         AutoTransition autoTransition = new AutoTransition();
         autoTransition.setDuration(duration);
         android.support.transition.TransitionManager.beginDelayedTransition(constraintLayout_start, autoTransition);
         constraintSet.applyTo(constraintLayout_start);
     }
 
-    public void delayedFinish() {
+    private void delayedFinish() {
         super.finish();
     }
 

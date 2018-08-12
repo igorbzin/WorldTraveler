@@ -33,7 +33,7 @@ public class StatisticsFragment extends Fragment {
     }
 
     private Handler handler = new Handler();
-    int pStatus = 0;
+    private int pStatus = 0;
 
     @SuppressLint("SetTextI18n")
     @Nullable

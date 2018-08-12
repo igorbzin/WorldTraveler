@@ -62,7 +62,7 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    public void permissionsRequest() {
+    private void permissionsRequest() {
 
         int SPLASH_TIME_OUT = 1500;
         if (Build.VERSION.SDK_INT >= MARSHMALLOW) {
@@ -131,7 +131,7 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
     }
 
 
-    public String setupMapStyle() {
+    private String setupMapStyle() {
         InputStream is = getResources().openRawResource(R.raw.map_style);
         Writer writer = new StringWriter();
         char[] buffer = new char[1024];

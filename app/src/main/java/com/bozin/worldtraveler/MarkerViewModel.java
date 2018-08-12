@@ -4,7 +4,7 @@ import android.arch.lifecycle.ViewModel;
 import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.Place;
 
-public class MarkerViewModel extends ViewModel {
+class MarkerViewModel extends ViewModel {
 
 
     private AppDatabase mDb;

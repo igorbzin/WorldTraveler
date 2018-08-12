@@ -20,15 +20,8 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bozin.worldtraveler.databinding.FragmentUserBinding;
-import com.facebook.AccessToken;
-import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.login.LoginResult;
-import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -38,13 +31,10 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.Objects;
 
@@ -82,6 +72,7 @@ public class LoginFragment extends Fragment implements
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         FragmentUserBinding loginBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_user, container, false);
+
         // [START config_signin]
         // Configure Google Sign In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -89,8 +80,8 @@ public class LoginFragment extends Fragment implements
                 .requestEmail()
                 .build();
         // [END config_signin]
-
         mGoogleSignInClient = GoogleSignIn.getClient(Objects.requireNonNull(getActivity()), gso);
+
 
         View view = loginBinding.getRoot();
         etEmail = loginBinding.etEmail;
@@ -103,31 +94,6 @@ public class LoginFragment extends Fragment implements
         SignInButton googleBtn = loginBinding.btnGoogleSignIn;
         googleBtn.setOnClickListener(this);
 
-
-        // Initialize Facebook Login button
-        CallbackManager mCallbackManager = CallbackManager.Factory.create();
-        LoginButton loginButton = loginBinding.loginSocialFacebook;
-        loginButton.setReadPermissions("email", "public_profile");
-        loginButton.setFragment(this);
-        loginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                Log.d(TAG, "facebook:onSuccess:" + loginResult);
-                handleFacebookAccessToken(loginResult.getAccessToken());
-            }
-
-            @Override
-            public void onCancel() {
-                Log.d(TAG, "facebook:onCancel");
-                // ...
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                Log.d(TAG, "facebook:onError", error);
-                // ...
-            }
-        });
 
 
         loginBinding.btnRegister.setOnClickListener(view1 -> {
@@ -241,12 +207,7 @@ public class LoginFragment extends Fragment implements
                         // Sign in success, update UI with the signed-in user's information
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = mAuth.getCurrentUser();
-                        FirebaseDatabase database = FirebaseDatabase.getInstance();
-                        DatabaseReference mdatabaseReference = database.getReference("/user");
-                        mdatabaseReference.setValue(user.getUid());
                         updateUI(user);
-                        // Write a message to the database
-
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
@@ -272,6 +233,7 @@ public class LoginFragment extends Fragment implements
     }
 
     private void updateUI(FirebaseUser firebaseUser) {
+        currentUser = firebaseUser;
         if (firebaseUser != null) {
             mOnLoggedInHandler.onLoginUpdate(firebaseUser);
         } else {
@@ -315,28 +277,6 @@ public class LoginFragment extends Fragment implements
     }
 
 
-    private void handleFacebookAccessToken(AccessToken token) {
-        Log.d(TAG, "handleFacebookAccessToken:" + token);
-
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
-                    if (task.isSuccessful()) {
-                        // Sign in success, update UI with the signed-in user's information
-                        Log.d(TAG, "signInWithCredential:success");
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        updateUI(user);
-                    } else {
-                        // If sign in fails, display a message to the user.
-                        Log.w(TAG, "signInWithCredential:failure", task.getException());
-                        Toast.makeText(getActivity(), "Authentication failed.",
-                                Toast.LENGTH_SHORT).show();
-                        updateUI(null);
-                    }
-
-                    // ...
-                });
-    }
 
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
@@ -376,9 +316,11 @@ public class LoginFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
+        mAuth = FirebaseAuth.getInstance();
         updateUI(currentUser);
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
     }
+
 
 
 }

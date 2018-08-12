@@ -29,7 +29,10 @@ import android.view.View;
 import android.widget.TextView;
 
 
+import com.bozin.worldtraveler.data.User;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int mNumberOfCountries;
     private String mMapstyle;
     private int backStackCount;
+    private DatabaseReference mdatabaseReference;
 
 
     @Override
@@ -216,7 +220,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    public String setMapStyle() {
+    private String setMapStyle() {
         SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
         boolean mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
         boolean mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
@@ -335,12 +339,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-    }
-
-
-    @Override
     public void onLoginUpdate(FirebaseUser user) {
         if (user != null) {
             mNavigationView.getMenu().clear();
@@ -362,6 +360,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
             createMenuLoggedIn();
 
+
+            mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
+            addUserToDatabase(user);
+
             mNavigationView.setCheckedItem(R.id.menu_item_user);
             Fragment profileFragment = new ProfileFragment();
             FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
@@ -380,8 +382,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         fragmentTransaction.replace(R.id.container, loginFragment)
                 .setReorderingAllowed(true)
                 .commit();
-        
+
         createMenu();
         loginFragment.signOut();
+    }
+
+    private void addUserToDatabase(FirebaseUser currentUser) {
+        String id = currentUser.getUid();
+        User user = new User(id, currentUser.getDisplayName(), Objects.requireNonNull(currentUser.getPhotoUrl()).toString(), "");
+        mdatabaseReference.child(id).setValue(user);
     }
 }
