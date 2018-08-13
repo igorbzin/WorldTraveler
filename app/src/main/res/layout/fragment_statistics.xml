@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools">
+    android:layout_height="match_parent">
 
 
     <TextView
@@ -60,8 +60,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="0"
-        android:textSize="24sp"
         android:textColor="@color/textWhite"
+        android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/iv_earth_icon"
         app:layout_constraintEnd_toEndOf="@+id/iv_earth_icon"
@@ -106,8 +106,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="0"
-        android:textSize="24sp"
         android:textColor="@color/textWhite"
+        android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/iv_earth_icon2"
         app:layout_constraintEnd_toEndOf="@+id/iv_earth_icon2"
@@ -139,8 +139,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:text="TextView"
-        android:textStyle="bold"
         android:textSize="24sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/pb_percentage_world"
         app:layout_constraintEnd_toEndOf="@+id/pb_percentage_world"
         app:layout_constraintStart_toStartOf="@+id/pb_percentage_world"
@@ -148,17 +148,17 @@
 
     <TextView
         android:id="@+id/tv_statistics_percentage_caption"
-        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-        android:textSize="24sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text="@string/tv_statistics_percentage_caption"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/iv_earth_icon2" />
+        app:layout_constraintTop_toBottomOf="@+id/iv_earth_icon2"
+        tools:text="@string/tv_statistics_percentage_caption" />
 
 
 </android.support.constraint.ConstraintLayout>

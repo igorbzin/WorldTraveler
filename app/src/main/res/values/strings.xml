@@ -93,6 +93,17 @@
     <string name="register_first_name_de">Last name</string>
     <string name="register_birthday_de">Birthday</string>
 
+
+    <!--Profile Fragment-->
+    <string name="drawer_header_profile_name">Giannis Antetokounmpu</string>
+    <string name="fragment_profile_share_message">Check out the cities i visited! Keep track of your travels and much more with WorldTraveler! </string>
+    <string name="fragment_profile_achievement_badge">Badge</string>
+    <string name="fragment_profile_achievement_percent"> Percentage \n traveled</string>
+    <string name="fragment_profile_achievement_cities">Number of \n cities visited</string>
+    <string name="fragment_profile_achievement_countries">Number of \n countries visited</string>
+    <string name="btn_profile_fragment_share">SHARE</string>
+    <string name="logout">Sign out</string>
+
     <!--Errors-->
     <string name="error_pwd_mismatch">The passwords don\'t match!</string>
     <string name="error_email_exists">The email address is already in use by another account.</string>
@@ -102,7 +113,5 @@
     <string name="error_invalid_user">There is no user corresponding to this email. </string>
     <string name="error_no_internet_connection">You have no internet connection, please reconnect and try again!</string>
 
-    <!--Placeholders-->
-    <string name="drawer_header_profile_name">Giannis Antetokounmpu</string>
 
 </resources>

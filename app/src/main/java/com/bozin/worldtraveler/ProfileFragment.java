@@ -11,11 +11,13 @@ import android.content.res.Resources;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -33,17 +35,25 @@ import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.bozin.worldtraveler.data.Place;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,7 +62,7 @@ import java.util.Objects;
 
 public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
-    private onSignedOutHandler mOnSignedOutHandler;
+
     private GoogleMap mMap;
     private SupportMapFragment supportMapFragment;
     private PlacesViewModel viewModel;
@@ -60,9 +70,18 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
 
 
-    public interface onSignedOutHandler{
+    public interface onSignedOutHandler {
         void onSignedOut();
     }
+
+    public static ProfileFragment newInstance(String userName) {
+        ProfileFragment profileFragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        args.putString("user_name", userName);
+        profileFragment.setArguments(args);
+        return profileFragment;
+    }
+
 
     @Nullable
     @Override
@@ -71,18 +90,24 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
         markerHashMap = new LinkedHashMap<>();
 
-        if(supportMapFragment== null){
-            supportMapFragment =  SupportMapFragment.newInstance(options);
+        try {
+            String userName = (String) Objects.requireNonNull(getArguments()).get("user_name");
+            profileBinding.textView2.setText(userName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
+            profileBinding.textView2.setText(Objects.requireNonNull(mAuth.getCurrentUser()).getDisplayName());
+        }
+
+        if (supportMapFragment == null) {
+            supportMapFragment = SupportMapFragment.newInstance(options);
             supportMapFragment.getMapAsync(this);
         }
         getChildFragmentManager().beginTransaction().replace(R.id.fragment_profile_map, supportMapFragment).commit();
 
-
-        profileBinding.btnSignOut.setOnClickListener(view -> mOnSignedOutHandler.onSignedOut());
-        return  profileBinding.getRoot();
+        return profileBinding.getRoot();
 
     }
-
 
 
     @Override
@@ -95,16 +120,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             setupViewModel();
         });
 
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mOnSignedOutHandler = (onSignedOutHandler) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString()
-                    + " must implement onSignedOutHandler");
-        }
     }
-
 
 
     @Override
@@ -123,10 +139,18 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         } catch (Resources.NotFoundException e) {
             Log.e("MAP_STYLE", "Can't find style. Error: ", e);
         }
+
+
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(30, 31), 0));
+
         mMap.getUiSettings().setMapToolbarEnabled(false);
+
+
+        mMap.setOnMapClickListener(latLng -> openShareImageDialog(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES) + "/map.png"));
+
         mMap.setOnMapLoadedCallback(this::snapShot);
     }
-
 
 
     private void setupViewModel() {
@@ -158,15 +182,14 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         String country = place.getCountry_name();
         double latitude = place.getLatitude();
         double longitude = place.getLongitude();
-        int markerId = place.getPlaceID();
         LatLng latLng = new LatLng(latitude, longitude);
 
 
-        Bitmap b= getBitmapFromVectorDrawable(getContext(), R.drawable.ic_location_on_black_24dp);
-        Bitmap bhalfsize = Bitmap.createScaledBitmap(b, b.getWidth()/2,b.getHeight()/2, false);
+        Bitmap b = getBitmapFromVectorDrawable(getContext(), R.drawable.ic_location_on_black_24dp);
+        Bitmap bhalfsize = Bitmap.createScaledBitmap(b, b.getWidth() / 2, b.getHeight() / 2, false);
 
         return new MarkerOptions().title(city)
-                .snippet("" + markerId).position(latLng).draggable(true)
+                .snippet(country).position(latLng).draggable(true)
                 .icon(BitmapDescriptorFactory.fromBitmap(bhalfsize));
     }
 
@@ -198,22 +221,18 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
 
     public void snapShot(){
+
         GoogleMap.SnapshotReadyCallback callback=new GoogleMap.SnapshotReadyCallback () {
             Bitmap bitmap;
             File file;
-
             @Override
             public void onSnapshotReady(Bitmap snapshot) {
-                bitmap = snapshot;
+                bitmap=snapshot;
                 try{
-                    file = new File(Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_PICTURES), "map.png");
-                    if (!file.mkdirs()) {
-                        Log.e("DIR", "Directory not created");
-                    }
 
+                    file=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"map.png");
                     FileOutputStream fout = new FileOutputStream (file);
-                    bitmap.compress (Bitmap.CompressFormat.PNG,90, fout);
+                    bitmap.compress (Bitmap.CompressFormat.PNG,90,fout);
                     Toast.makeText (getActivity(), "Capture", Toast.LENGTH_SHORT).show ();
 
                 }catch (Exception e){
@@ -227,24 +246,20 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         mMap.snapshot (callback);
     }
 
-    public void openShareImageDialog(String filePath)
-    {
-        File file = Objects.requireNonNull(getActivity()).getFileStreamPath(filePath);
+    public void openShareImageDialog(String filePath) {
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
 
-        if(!filePath.equals("")) {
-            final ContentValues values = new ContentValues(2);
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-            values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
-            final Uri contentUriFile = getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-            final Intent intent = new Intent(android.content.Intent.ACTION_SEND);
-            intent.setType("image/jpeg");
-            intent.putExtra(android.content.Intent.EXTRA_STREAM, contentUriFile);
-            startActivity(Intent.createChooser(intent, "Share Image"));
-        }
-        else
-        {
-            Toast.makeText(getActivity(), "Share image failed", Toast.LENGTH_LONG).show();
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"map.png");
+        if (file.exists()) {
+            Uri uri = Uri.parse("file://" + file.getAbsolutePath());
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+            share.putExtra(Intent.EXTRA_TEXT, getString(R.string.fragment_profile_share_message));
+            share.setType("image/*");
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Objects.requireNonNull(getContext()).startActivity(Intent.createChooser(share, "Share file"));
         }
     }
+
 }

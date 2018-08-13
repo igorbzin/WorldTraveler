@@ -8,7 +8,7 @@
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
         <item name="preferenceTheme">@style/MyPreferenceTheme</item>
         <item name="android:checkBoxPreferenceStyle">@style/checkBoxStyle</item>
-
+        <item name="android:actionMenuTextColor">@color/textWhite</item>
     </style>
 
 

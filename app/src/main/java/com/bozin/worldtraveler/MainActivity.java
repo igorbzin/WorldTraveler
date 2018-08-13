@@ -25,6 +25,9 @@ import android.support.v7.widget.Toolbar;
 
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
@@ -54,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle drawerToggle;
     private NavigationView mNavigationView;
     private FragmentManager mFragmentManager;
     private ArrayList<Integer> mBackstackItems;
@@ -62,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private String mMapstyle;
     private int backStackCount;
     private DatabaseReference mdatabaseReference;
+
 
 
     @Override
@@ -79,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
-        ActionBarDrawerToggle drawerToggle = new ActionBarDrawerToggle(MainActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
+         drawerToggle = new ActionBarDrawerToggle(MainActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
         mDrawerLayout.addDrawerListener(drawerToggle);
         drawerToggle.syncState();
 
@@ -318,22 +323,41 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        Log.v("OnResume", "OnResume called");
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        Log.v("OnStop", "OnStop called");
-
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // toggle nav drawer on selecting action bar app icon/title
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        // Handle action bar actions click
+        switch (item.getItemId()) {
+           /* case R.id.rate_app:
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
+                } catch (android.content.ActivityNotFoundException anfe) {
+                    startActivity(new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("http://play.google.com/store/apps/details?id=" + getPackageName())));
+                }
+                return true;
+                */
+            case R.id.action_logout:
+                onSignedOut();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.v("OnDestroy", "Ondestroy called");
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
     }
 
@@ -365,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             addUserToDatabase(user);
 
             mNavigationView.setCheckedItem(R.id.menu_item_user);
-            Fragment profileFragment = new ProfileFragment();
+            Fragment profileFragment = ProfileFragment.newInstance(profile_name);
             FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
             fragmentTransaction.replace(R.id.container, profileFragment)
@@ -376,16 +400,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSignedOut() {
-
         LoginFragment loginFragment = LoginFragment.newInstance(1);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.container, loginFragment)
                 .setReorderingAllowed(true)
                 .commit();
-
         createMenu();
         loginFragment.signOut();
     }
+
 
     private void addUserToDatabase(FirebaseUser currentUser) {
         String id = currentUser.getUid();

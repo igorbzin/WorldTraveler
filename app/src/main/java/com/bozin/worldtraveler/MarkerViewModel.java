@@ -13,7 +13,7 @@ class MarkerViewModel extends ViewModel {
     private int id;
 
 
-     MarkerViewModel(AppDatabase appDatabase, int id) {
+    public MarkerViewModel(AppDatabase appDatabase, int id) {
         mDb = appDatabase;
         this.id = id;
         place = mDb.placesDao().loadPlaceById(id);

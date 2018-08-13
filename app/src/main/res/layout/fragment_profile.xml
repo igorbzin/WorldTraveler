@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="24dp"
             android:textSize="24sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -27,33 +27,144 @@
         <FrameLayout
             android:id="@+id/fragment_profile_map"
             android:name="com.google.android.gms.maps.MapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="250dp"
-            android:layout_marginBottom="178dp"
-            android:layout_marginEnd="16dp"
+            android:layout_width="256dp"
+            android:layout_height="300dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="234dp"
-            map:cameraZoom="13"
-            map:layout_constraintBottom_toTopOf="@+id/btn_sign_out"
-            map:layout_constraintEnd_toEndOf="parent"
-            map:layout_constraintStart_toStartOf="parent"
-            map:layout_constraintTop_toBottomOf="@+id/textView2"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            map:cameraZoom="0"
             map:liteMode="true"
             map:mapType="normal" />
 
-
         <Button
-            android:id="@+id/btn_sign_out"
+            android:id="@+id/btn_fragment_profile_share"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="64dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/roundedbutton"
+            android:text="@string/btn_profile_fragment_share"
+            android:textColor="@color/textWhite"
+            app:layout_constraintBottom_toBottomOf="@+id/fragment_profile_map"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/fragment_profile_map" />
+
+        <ImageView
+            android:id="@+id/iv_profile_badge"
+            android:layout_width="100dp"
+            android:layout_height="200dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="56dp"
+            app:layout_constraintEnd_toStartOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            map:srcCompat="@drawable/golden_badge" />
+
+        <TextView
+            android:id="@+id/tv_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:text="SIGN OUT"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            android:text="@string/fragment_profile_achievement_badge"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/fragment_profile_map"
+            app:layout_constraintEnd_toEndOf="@+id/iv_profile_badge"
+            app:layout_constraintStart_toStartOf="@+id/iv_profile_badge" />
 
+        <TextView
+            android:id="@+id/tv_profile_cities"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/fragment_profile_achievement_cities"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintStart_toStartOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintTop_toTopOf="@+id/tv_badge" />
+
+        <TextView
+            android:id="@+id/tv_profile_countries"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fragment_profile_achievement_countries"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@+id/iv_profile_earth_icon"
+            app:layout_constraintStart_toStartOf="@+id/iv_profile_earth_icon"
+            app:layout_constraintTop_toTopOf="@+id/tv_profile_cities" />
+
+
+        <ImageView
+            android:id="@+id/iv_profile_earth_icon2"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginBottom="50dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/earth_icon"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_profile_badge"
+            app:layout_constraintEnd_toStartOf="@+id/iv_profile_earth_icon"
+            app:layout_constraintHeight_default="percent"
+            app:layout_constraintHeight_percent=".3"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/iv_profile_badge"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent=".3" />
+
+        <TextView
+            android:id="@+id/tv_profile_number_of_countries_visited"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="0"
+            android:textColor="@color/textWhite"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_profile_earth_icon"
+            app:layout_constraintEnd_toEndOf="@+id/iv_profile_earth_icon"
+            app:layout_constraintStart_toStartOf="@+id/iv_earth_icon2"
+            app:layout_constraintTop_toTopOf="@+id/iv_profile_earth_icon" />
+
+
+        <ImageView
+            android:id="@+id/iv_profile_earth_icon"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/earth_icon"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_default="percent"
+            app:layout_constraintHeight_percent=".3"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent=".3" />
+
+        <TextView
+            android:id="@+id/tv_profile_number_of_cities_visited"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="0"
+            android:textColor="@color/textWhite"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintEnd_toEndOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintStart_toStartOf="@+id/iv_profile_earth_icon2"
+            app:layout_constraintTop_toTopOf="@+id/iv_profile_earth_icon2" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>
