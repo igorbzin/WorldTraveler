@@ -30,6 +30,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.bozin.worldtraveler.data.User;
@@ -66,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private String mMapstyle;
     private int backStackCount;
     private DatabaseReference mdatabaseReference;
-
+    private SharedPreferences sharedPreferences;
 
 
     @Override
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
-         drawerToggle = new ActionBarDrawerToggle(MainActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
+        drawerToggle = new ActionBarDrawerToggle(MainActivity.this, mDrawerLayout, R.string.open_drawer, R.string.closed_drawer);
         mDrawerLayout.addDrawerListener(drawerToggle);
         drawerToggle.syncState();
 
@@ -226,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private String setMapStyle() {
-        SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
         boolean mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
         boolean mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
 
@@ -253,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private void setupSharedPreferences() {
-        SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
 
@@ -291,10 +292,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             }
                             stylers.put(j, secondJSONObject);
                         }
-
                     }
                 }
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -323,8 +322,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
+    public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
         return true;
@@ -348,7 +346,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 return true;
                 */
             case R.id.action_logout:
-                onSignedOut();
+                if(sharedPreferences.getInt(getString(R.string.sp_logged_in_status),0) == 1){
+                    onSignedOut();
+                } else {
+                    Toast.makeText(this, "You are already logged out", Toast.LENGTH_LONG).show();
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -387,6 +389,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
             addUserToDatabase(user);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt(getString(R.string.sp_logged_in_status), 1);
+            editor.apply();
 
             mNavigationView.setCheckedItem(R.id.menu_item_user);
             Fragment profileFragment = ProfileFragment.newInstance(profile_name);
@@ -400,6 +405,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSignedOut() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt(getString(R.string.sp_logged_in_status), 0);
+        editor.apply();
+
         LoginFragment loginFragment = LoginFragment.newInstance(1);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.container, loginFragment)

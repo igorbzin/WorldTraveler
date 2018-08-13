@@ -3,7 +3,6 @@ package com.bozin.worldtraveler;
 
 import android.annotation.SuppressLint;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,7 +10,6 @@ import android.content.res.Resources;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -19,7 +17,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -29,13 +26,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.bozin.worldtraveler.data.Place;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -43,17 +38,12 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,6 +58,8 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private PlacesViewModel viewModel;
     private List<Place> placesList = new ArrayList<>();
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
+    private LinkedHashMap<Integer, String> mCountriesVisited;
+    private FragmentProfileBinding profileBinding;
 
 
     public interface onSignedOutHandler {
@@ -86,9 +78,10 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        FragmentProfileBinding profileBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
+        profileBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
         GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
         markerHashMap = new LinkedHashMap<>();
+        mCountriesVisited = new LinkedHashMap<>();
 
         try {
             String userName = (String) Objects.requireNonNull(getArguments()).get("user_name");
@@ -120,8 +113,15 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             setupViewModel();
         });
 
+
     }
 
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -146,8 +146,9 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
 
-        mMap.setOnMapClickListener(latLng -> openShareImageDialog(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES) + "/map.png"));
+        mMap.setOnMapClickListener(latLng -> openImage());
+
+        profileBinding.btnFragmentProfileShare.setOnClickListener(view -> openShareImageDialog());
 
         mMap.setOnMapLoadedCallback(this::snapShot);
     }
@@ -160,6 +161,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             createMarkersFromPlaces();
             if (markerHashMap != null) {
                 setMarkers();
+                updateStatisticNumbers();
             }
         });
     }
@@ -182,8 +184,13 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         String country = place.getCountry_name();
         double latitude = place.getLatitude();
         double longitude = place.getLongitude();
+        int markerId = place.getPlaceID();
         LatLng latLng = new LatLng(latitude, longitude);
 
+
+        if (!mCountriesVisited.containsValue(country)) {
+            mCountriesVisited.put(markerId, country);
+        }
 
         Bitmap b = getBitmapFromVectorDrawable(getContext(), R.drawable.ic_location_on_black_24dp);
         Bitmap bhalfsize = Bitmap.createScaledBitmap(b, b.getWidth() / 2, b.getHeight() / 2, false);
@@ -220,37 +227,34 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    public void snapShot(){
+    public void snapShot() {
 
-        GoogleMap.SnapshotReadyCallback callback=new GoogleMap.SnapshotReadyCallback () {
+        GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback() {
             Bitmap bitmap;
             File file;
+
             @Override
             public void onSnapshotReady(Bitmap snapshot) {
-                bitmap=snapshot;
-                try{
+                bitmap = snapshot;
+                try {
 
-                    file=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"map.png");
-                    FileOutputStream fout = new FileOutputStream (file);
-                    bitmap.compress (Bitmap.CompressFormat.PNG,90,fout);
-                    Toast.makeText (getActivity(), "Capture", Toast.LENGTH_SHORT).show ();
+                    file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "map.png");
+                    FileOutputStream fout = new FileOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, fout);
 
-                }catch (Exception e){
-                    e.printStackTrace ();
-                    Toast.makeText (getActivity(), "Not Capture", Toast.LENGTH_SHORT).show ();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
 
             }
         };
-        mMap.snapshot (callback);
+        mMap.snapshot(callback);
     }
 
-    public void openShareImageDialog(String filePath) {
-        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
-        StrictMode.setVmPolicy(builder.build());
-
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"map.png");
+    public void openShareImageDialog() {
+        createPolicyRules();
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "map.png");
         if (file.exists()) {
             Uri uri = Uri.parse("file://" + file.getAbsolutePath());
             Intent share = new Intent(Intent.ACTION_SEND);
@@ -260,6 +264,28 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             Objects.requireNonNull(getContext()).startActivity(Intent.createChooser(share, "Share file"));
         }
+    }
+
+    public void openImage() {
+        createPolicyRules();
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "map.png");
+        if (file.exists()) {
+            Uri uri = Uri.parse("file://" + file.getAbsolutePath());
+            Intent open = new Intent(Intent.ACTION_VIEW);
+            open.setDataAndType(uri, "image/*");
+            startActivity(open);
+        }
+    }
+
+    public void createPolicyRules() {
+
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
+    }
+
+    public void updateStatisticNumbers() {
+        profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(markerHashMap.size()));
+        profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(mCountriesVisited.size()));
     }
 
 }

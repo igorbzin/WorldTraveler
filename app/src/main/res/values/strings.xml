@@ -65,7 +65,8 @@
 
 
     <!--Sharedpreferences-->
-    <string name="sp_mapstyle_key">map_style_jsonarray</string>
+    <string name="sp_mapstyle_key" translatable="false">map_style_jsonarray</string>
+    <string name="sp_logged_in_status" translatable="false">logged_in</string>
 
 
     <!--Login Fragment-->

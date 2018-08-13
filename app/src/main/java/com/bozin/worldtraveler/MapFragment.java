@@ -65,7 +65,7 @@ import java.util.Objects;
  * Created by igorb on 03/03/2018.
  */
 
-public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback{
+public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
     private final String TAG = "Room observer";
     private GoogleMap mMap;
@@ -106,7 +106,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
 
-        if(supportMapFragment== null){
+        if (supportMapFragment == null) {
             supportMapFragment = new SupportMapFragment();
             supportMapFragment.getMapAsync(this);
         }
@@ -158,9 +158,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                         if (lastKnownLocation != null) {
                             mLatLong = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                         }
-                    } else {
-                        Toast.makeText(getActivity(), "NO LOCATION DETECTED", Toast.LENGTH_LONG).show();
                     }
+                    //TODO define action when no last known location detected
+                    //Toast.makeText(getActivity(), "NO LOCATION DETECTED", Toast.LENGTH_LONG).show();
+
                 })
                 .addOnFailureListener(e -> {
                     Log.d("MapDemoActivity", "Error trying to get last GPS location");
@@ -199,7 +200,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         mCameraPosition = 0;
 
     }
-
 
 
     private void setupViewModel() {
@@ -379,7 +379,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         });
 
 
-
         //Set onclicklistener for Marker dragging to delete it
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
@@ -528,9 +527,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         super.onCreate(savedInstanceState);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getContext()));
     }
-
-
-
 
 
 }
