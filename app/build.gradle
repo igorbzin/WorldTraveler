@@ -3,10 +3,10 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         config {
-            keyAlias 'keywt'
-            keyPassword 'igiboy18,cju-63'
-            storeFile file('/home/rick/Documents/world_traveler_key.jks')
-            storePassword 'igiboy18,cju-63'
+            keyAlias RELEASE_STORE_ALIAS
+            keyPassword RELEASE_STORE_KEYSTORE_PASSWORD
+            storeFile file(RELEASE_STORE_KEYSTORE_FILE_PATH)
+            storePassword RELEASE_STORE_PASSWORD
         }
     }
     compileSdkVersion 27
@@ -33,6 +33,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.config
+            resValue 'string', "api_key", GOOGLE_MAPS_API_KEY
+        }
+        debug {
+            resValue 'string', "api_key", GOOGLE_MAPS_API_KEY
         }
     }
     dataBinding.enabled = true
@@ -53,16 +57,16 @@ dependencies {
     })
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:2.0.0-alpha1'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.0-alpha2'
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
     //Firebase, Login
     implementation 'com.google.firebase:firebase-core:16.0.1'
-    implementation 'com.google.firebase:firebase-auth:16.0.2'
+    implementation 'com.google.firebase:firebase-auth:16.0.3'
     // Google Sign In SDK (only required for Google Sign In)
-    implementation 'com.google.android.gms:play-services-auth:15.0.1'
+    implementation 'com.google.android.gms:play-services-auth:16.0.0'
     // Facebook Android SDK (only required for Facebook Login)
     // Used in FacebookLoginActivity.
-    implementation 'com.facebook.android:facebook-login:4.32.0'
+    implementation 'com.facebook.android:facebook-login:4.35.0'
     //Room
     implementation 'android.arch.persistence.room:runtime:1.1.1'
     annotationProcessor "android.arch.persistence.room:compiler:1.1.1"

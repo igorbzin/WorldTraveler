@@ -42,7 +42,6 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("CREATE TABLE `cities` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `city` TEXT NOT NULL, `country` TEXT NOT NULL," +
                     " `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `picture_uris` TEXT);");
             database.execSQL("INSERT INTO cities SELECT * FROM places;");
-            database.execSQL("DROP TABLE places");
         }
     };
 
