@@ -140,26 +140,26 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //if (data != null) {
+        if (data != null) {
             /*if (data.getData() != null) {
                 Uri pictureUri = data.getData();
                 mPictureUris.add(pictureUri);
             }
             else {*/
-        if (data.getClipData() != null) {
-            ClipData mClipData = data.getClipData();
-            for (int i = 0; i < mClipData.getItemCount(); i++) {
-                ClipData.Item item = mClipData.getItemAt(i);
-                Uri uri = item.getUri();
-                //getContentResolver().takePersistableUriPermission(uri, flags);
-                mPictureUris.add(uri);
+            if (data.getClipData() != null) {
+                ClipData mClipData = data.getClipData();
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
+                    ClipData.Item item = mClipData.getItemAt(i);
+                    Uri uri = item.getUri();
+                    //getContentResolver().takePersistableUriPermission(uri, flags);
+                    mPictureUris.add(uri);
+                }
             }
+
+            mAdapter.updatePictures(mPictureUris);
+            AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
+
         }
-
-        mAdapter.updatePictures(mPictureUris);
-        AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
-
-
     }
 
 
