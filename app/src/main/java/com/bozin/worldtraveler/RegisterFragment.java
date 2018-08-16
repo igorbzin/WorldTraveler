@@ -18,13 +18,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.bozin.worldtraveler.databinding.FragmentRegisterBinding;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 import java.util.Objects;
 
@@ -58,49 +56,61 @@ public class RegisterFragment extends Fragment {
             String passwordRepeatStr = passwordRepeat.getText().toString();
             if(passwordStr.equals(passwordRepeatStr)){
                 mAuth.createUserWithEmailAndPassword(emailStr, passwordStr)
-                        .addOnCompleteListener(Objects.requireNonNull(getActivity()), new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    // Sign in success, update UI with the signed-in user's information
-                                    Log.d("Register", "createUserWithEmail:success");
-                                    FirebaseUser user = mAuth.getCurrentUser();
-                                } else {
-                                    // If sign in fails, display a message to the user.
-                                    Log.w("Register", "createUserWithEmail:failure", task.getException());
-                                    try {
-                                        throw Objects.requireNonNull(task.getException());
+                        .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
+                            if (task.isSuccessful()) {
+                                // Sign in success, update UI with the signed-in user's information
+                                Log.d("Register", "createUserWithEmail:success");
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                LoginFragment.onLoggedInHandler mLoginHandler = (LoginFragment.onLoggedInHandler) getContext();
+                                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                        .setDisplayName( name.getText().toString() + " " + firstName.getText().toString())
+                                        .build();
 
-                                    } catch (FirebaseAuthException e) {
-                                        Log.w("Register", "RegisterInWithEmail:failure", task.getException());
-                                        String errorCode = e.getErrorCode();
-                                        switch (errorCode) {
-                                            case "ERROR_INVALID_EMAIL":
-                                                email.requestFocus();
-                                                email.setError(getString(R.string.error_invalid_email));
-                                                break;
-                                            case "ERROR_WRONG_PASSWORD":
-                                                passwordRepeat.requestFocus();
-                                                passwordRepeat.setError(getString(R.string.error_invalid_pwd));
-                                                break;
-                                            case "ERROR_USER_NOT_FOUND":
-                                                passwordRepeat.requestFocus();
-                                                passwordRepeat.setError(getString(R.string.error_invalid_user));
-                                                break;
-                                            case "ERROR_EMAIL_ALREADY_IN_USE":
-                                                email.requestFocus();
-                                                email.setError(getString(R.string.error_email_exists));
-                                            default:
-                                                break;
-                                        }
+                                assert user != null;
+                                user.updateProfile(profileUpdates)
+                                        .addOnCompleteListener(task1 -> {
+                                            if (task1.isSuccessful()) {
+                                                Log.d("USER CREATED", "User profile updated.");
+                                                Objects.requireNonNull(mLoginHandler).onLoginUpdate(user);
+                                            }
+                                        });
 
-                                    } catch (FirebaseNetworkException e) {
-                                        Snackbar error = makeSnackBar(getString(R.string.error_no_internet_connection));
-                                        hideKeyboard();
-                                        error.show();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
+
+                            } else {
+                                // If sign in fails, display a message to the user.
+                                Log.w("Register", "createUserWithEmail:failure", task.getException());
+                                try {
+                                    throw Objects.requireNonNull(task.getException());
+
+                                } catch (FirebaseAuthException e) {
+                                    Log.w("Register", "RegisterInWithEmail:failure", task.getException());
+                                    String errorCode = e.getErrorCode();
+                                    switch (errorCode) {
+                                        case "ERROR_INVALID_EMAIL":
+                                            email.requestFocus();
+                                            email.setError(getString(R.string.error_invalid_email));
+                                            break;
+                                        case "ERROR_WRONG_PASSWORD":
+                                            passwordRepeat.requestFocus();
+                                            passwordRepeat.setError(getString(R.string.error_invalid_pwd));
+                                            break;
+                                        case "ERROR_USER_NOT_FOUND":
+                                            passwordRepeat.requestFocus();
+                                            passwordRepeat.setError(getString(R.string.error_invalid_user));
+                                            break;
+                                        case "ERROR_EMAIL_ALREADY_IN_USE":
+                                            email.requestFocus();
+                                            email.setError(getString(R.string.error_email_exists));
+                                        default:
+                                            break;
                                     }
+
+                                } catch (FirebaseNetworkException e) {
+                                    Snackbar error = makeSnackBar(getString(R.string.error_no_internet_connection));
+                                    hideKeyboard();
+                                    error.show();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             }
                         });

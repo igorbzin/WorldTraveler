@@ -1,6 +1,7 @@
 package com.bozin.worldtraveler;
 
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 
 
@@ -33,6 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.bozin.worldtraveler.data.Place;
 import com.bozin.worldtraveler.data.User;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         MapFragment.MapFragmentStatisticsListener, LoginFragment.onLoggedInHandler, ProfileFragment.onSignedOutHandler {
 
 
+    private final String TAG = "MainActivity";
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle drawerToggle;
     private NavigationView mNavigationView;
@@ -68,6 +71,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int backStackCount;
     private DatabaseReference mdatabaseReference;
     private SharedPreferences sharedPreferences;
+    private Menu menu;
+    private PlacesViewModel placesViewModel;
+
 
 
     @Override
@@ -82,6 +88,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, R.color.textWhite));
 
         backStackCount = 0;
+        placesViewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        setupViewModel();
+
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
@@ -135,6 +144,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setupSharedPreferences();
         mMapstyle = setMapStyle();
     }
+
+
+    private void setupViewModel() {
+        placesViewModel.getPlacesList().observe( this, places -> {
+            Log.d(TAG, "Updating list of places from LiveData in ViewModel");
+            });
+    }
+
 
 
     private void createMenu() {
@@ -324,7 +341,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+        int loggedIn = sharedPreferences.getInt(getString(R.string.sp_logged_in_status), 0);
+        if (loggedIn == 1) {
+            inflater.inflate(R.menu.menu, menu);
+        } else {
+            inflater.inflate(R.menu.menu_logged_out, menu);
+        }
+        this.menu = menu;
         return true;
     }
 
@@ -336,25 +359,34 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
         // Handle action bar actions click
         switch (item.getItemId()) {
-           /* case R.id.rate_app:
-                try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
-                } catch (android.content.ActivityNotFoundException anfe) {
-                    startActivity(new Intent(Intent.ACTION_VIEW,
-                            Uri.parse("http://play.google.com/store/apps/details?id=" + getPackageName())));
-                }
-                return true;
-                */
             case R.id.action_logout:
-                if(sharedPreferences.getInt(getString(R.string.sp_logged_in_status),0) == 1){
+                if (sharedPreferences.getInt(getString(R.string.sp_logged_in_status), 0) == 1) {
                     onSignedOut();
                 } else {
                     Toast.makeText(this, "You are already logged out", Toast.LENGTH_LONG).show();
+                    return false;
                 }
                 return true;
+            case R.id.action_login:
+                if (sharedPreferences.getInt(getString(R.string.sp_logged_in_status), 0) == 0) {
+                    LoginFragment loginFragment = LoginFragment.newInstance(1);
+                    FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    fragmentTransaction.replace(R.id.container, loginFragment)
+                            .setReorderingAllowed(true)
+                            .commit();
+                    return true;
+                }else {
+                    return false;
+                }
+
+
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void updateOptionsMenu() {
+        supportInvalidateOptionsMenu();
     }
 
     @Override
@@ -389,6 +421,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
             addUserToDatabase(user);
+
+            //Update actionbar menu
+            updateOptionsMenu();
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putInt(getString(R.string.sp_logged_in_status), 1);
             editor.apply();
@@ -405,9 +440,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSignedOut() {
+        //Update actionbar menu
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(getString(R.string.sp_logged_in_status), 0);
         editor.apply();
+        updateOptionsMenu();
 
         LoginFragment loginFragment = LoginFragment.newInstance(1);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
@@ -416,12 +453,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .commit();
         createMenu();
         loginFragment.signOut();
+
     }
 
 
     private void addUserToDatabase(FirebaseUser currentUser) {
         String id = currentUser.getUid();
-        User user = new User(id, currentUser.getDisplayName(), Objects.requireNonNull(currentUser.getPhotoUrl()).toString(), "");
+        User user = new User(id, currentUser.getDisplayName(), "", "");
         mdatabaseReference.child(id).setValue(user);
     }
 }

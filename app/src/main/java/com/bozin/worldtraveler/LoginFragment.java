@@ -1,23 +1,26 @@
 package com.bozin.worldtraveler;
 
-import android.app.Activity;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -39,7 +42,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import java.util.Objects;
 
 
-public class LoginFragment extends Fragment implements
+public class LoginFragment extends BaseFragment implements
         View.OnClickListener {
 
     private FirebaseAuth mAuth;
@@ -51,6 +54,7 @@ public class LoginFragment extends Fragment implements
     private GoogleSignInClient mGoogleSignInClient;
     private FirebaseUser currentUser;
     private onLoggedInHandler mOnLoggedInHandler;
+
 
     private static final int RC_SIGN_IN = 9001;
 
@@ -73,27 +77,50 @@ public class LoginFragment extends Fragment implements
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         FragmentUserBinding loginBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_user, container, false);
 
-        // [START config_signin]
         // Configure Google Sign In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-        // [END config_signin]
         mGoogleSignInClient = GoogleSignIn.getClient(Objects.requireNonNull(getActivity()), gso);
 
 
+        //View initialisation
         View view = loginBinding.getRoot();
         etEmail = loginBinding.etEmail;
         etPassword = loginBinding.etPassword;
         loginBinding.btnSignIn.setText(getString(R.string.btn_login));
         loginBinding.btnRegister.setText(getString(R.string.btn_user_register));
-        //loginBinding.btnSignOut.setText(getString(R.string.btn_login_sign_out));
         etEmail.setHint(getString(R.string.tv_login_email));
+
+        //underline for textviews, set onclicklisteners
+        TextView pwdForgotten = loginBinding.loginForgottenPwd;
+        pwdForgotten.setPaintFlags(pwdForgotten.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        pwdForgotten.setOnClickListener(view13 -> onCreateDialogFragment());
+
+        TextView skipLogin = loginBinding.tvSkipLogin;
+        skipLogin.setPaintFlags(skipLogin.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        skipLogin.setOnClickListener(view12 -> {
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt("skip_login", 1);
+            editor.apply();
+
+            //Switch fragment to map
+            NavigationView navigationView = getActivity().findViewById(R.id.nav_view);
+            navigationView.getMenu().getItem(0).setChecked(true);
+            MapFragment mapFragment = new MapFragment();
+            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
+            fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                    .replace(R.id.container, mapFragment)
+                    .addToBackStack(getString(R.string.fragment_user))
+                    .commit();
+        });
+
+
         etPassword.setHint(getString(R.string.tv_login_password));
         SignInButton googleBtn = loginBinding.btnGoogleSignIn;
         googleBtn.setOnClickListener(this);
-
 
 
         loginBinding.btnRegister.setOnClickListener(view1 -> {
@@ -124,7 +151,6 @@ public class LoginFragment extends Fragment implements
 
                             try {
                                 throw Objects.requireNonNull(task.getException());
-
                             } catch (FirebaseAuthException e) {
                                 Log.w(TAG, "signInWithEmail:failure", task.getException());
                                 String errorCode = e.getErrorCode();
@@ -180,7 +206,7 @@ public class LoginFragment extends Fragment implements
         if (signingOut != 1) {
             mAuth = FirebaseAuth.getInstance();
             currentUser = mAuth.getCurrentUser();
-            if(currentUser!= null){
+            if (currentUser != null) {
                 currentUser.getUid();
                 currentUser.getMetadata();
                 currentUser.getDisplayName();
@@ -199,6 +225,8 @@ public class LoginFragment extends Fragment implements
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        //TODO Create better progressbar
+
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
@@ -214,21 +242,12 @@ public class LoginFragment extends Fragment implements
                         updateUI(null);
                     }
 
+
                 });
     }
 
 
     public void signOut() {
-        /*
-        if (mAuth != null) {
-            mAuth.signOut();
-            updateUI(null);
-        } else if (mGoogleSignInClient != null) {
-            // Google sign out
-            mGoogleSignInClient.signOut().addOnCompleteListener(Objects.requireNonNull(getActivity()),
-                    task -> updateUI(null));
-        }
- */
         FirebaseAuth.getInstance().signOut();
     }
 
@@ -247,13 +266,6 @@ public class LoginFragment extends Fragment implements
         }
     }
 
-    private void hideKeyboard() {
-
-        InputMethodManager imm = (InputMethodManager) Objects.requireNonNull(getActivity()).getSystemService(Activity.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.hideSoftInputFromWindow(getActivity().findViewById(R.id.cl_user_fragment).getWindowToken(), 0);
-        }
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -275,7 +287,6 @@ public class LoginFragment extends Fragment implements
             }
         }
     }
-
 
 
     private void signIn() {
@@ -312,7 +323,6 @@ public class LoginFragment extends Fragment implements
     }
 
 
-
     @Override
     public void onResume() {
         super.onResume();
@@ -321,6 +331,38 @@ public class LoginFragment extends Fragment implements
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
     }
 
+    @SuppressLint("InflateParams")
+    public void onCreateDialogFragment() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+        // Get the layout inflater
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+
+
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(inflater.inflate(R.layout.dialog_pwd_reset, null))
+                // Add action buttons
+                .setPositiveButton(R.string.btn_positive, (dialog, id) -> {
+
+                })
+                .setNegativeButton(R.string.btn_negative, (dialog, id) -> dialog.cancel());
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(dialog.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.colorAccent));
+        dialog.getButton(dialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            EditText email = ((AlertDialog) dialog).findViewById(R.id.et_pwd_reset_mail);
+            String sEmail = Objects.requireNonNull(email).getText().toString();
+            if (!sEmail.isEmpty()) {
+                mAuth.sendPasswordResetEmail(sEmail);
+                dialog.dismiss();
+            } else {
+                email.setError("Can't be empty!");
+            }
+        });
+        dialog.getButton(dialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.colorAccent));
+    }
 
 
 }

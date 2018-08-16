@@ -4,7 +4,6 @@ package com.bozin.worldtraveler;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -58,7 +57,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+
 import java.util.Objects;
+
 
 
 /**
@@ -67,7 +68,7 @@ import java.util.Objects;
 
 public class MapFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback {
 
-    private final String TAG = "Room observer";
+    private final String TAG = "Map";
     private GoogleMap mMap;
     private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
     private LatLng mLatLong;
@@ -89,7 +90,9 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private FusedLocationProviderClient mFusedLocationClient;
     private Location lastKnownLocation;
 
+
     private SupportMapFragment supportMapFragment;
+
 
 
     // Container Activity must implement this interface
@@ -105,6 +108,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         View rootView = inflater.inflate(R.layout.fragment_map, container, false);
         motionLayout = rootView.findViewById(R.id.motion02_Layout_map_fragment);
         mAddButton = rootView.findViewById(R.id.btn_add_place);
+
 
         if (supportMapFragment == null) {
             supportMapFragment = new SupportMapFragment();
@@ -141,10 +145,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         if (bundle != null) {
             try {
                 markerHashMap = (LinkedHashMap<Integer, MarkerOptions>) bundle.getSerializable(KEY_MARKER);
+                Log.d(TAG, "Markerhashmap from bundle restored");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            setMarkers();
+
         }
 
 
@@ -164,7 +169,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 })
                 .addOnFailureListener(e -> {
-                    Log.d("MapDemoActivity", "Error trying to get last GPS location");
+                    Log.d(TAG, "Error trying to get last GPS location");
                     e.printStackTrace();
                 });
         mFusedLocationClient.getLastLocation();
@@ -203,14 +208,13 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     private void setupViewModel() {
+        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
             placesList = places;
             createMarkersFromPlaces();
-            if (markerHashMap != null) {
-                setMarkers();
-                updateStatisticNumbers();
-            }
+            AppExecutor.getInstance().mainThread().execute(this::setMarkers);
+            updateStatisticNumbers();
         });
     }
 
@@ -238,17 +242,31 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             MarkerOptions markerOptions = createMarkerOptions(place);
             markerHashMap.put(place.getPlaceID(), markerOptions);
         }
+        Log.v(TAG, "Hashmap size is " + markerHashMap.size());
+
+
     }
 
 
     //Function to set all markers retrieved from database
     private void setMarkers() {
-        mMap.clear();
-        ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
-        for (int i = 0; i < markerOptionsList.size(); i++) {
-            MarkerOptions option = markerOptionsList.get(i);
-            mMap.addMarker(option);
+        if (mMap != null) {
+            mMap.clear();
+            Log.v(TAG, "Map is cleared");
+            ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
+            Log.v(TAG, "Markeroptions size: " + markerOptionsList.size() + " and Markerhashmap size" + markerHashMap.size());
+            for (int i = 0; i < markerOptionsList.size(); i++) {
+                MarkerOptions option = markerOptionsList.get(i);
+                mMap.addMarker(option);
+            }
+            Log.v(TAG, "Markers were added to map");
+            Log.d(TAG, "Google Map is not null");
+
+
+        } else {
+            Log.d(TAG, "Google Map is null");
         }
+
     }
 
 
@@ -360,10 +378,18 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     @Override
     public void onMapReady(GoogleMap googleMap) {
         //Initialize the map
         mMap = googleMap;
+        Log.v("Map", "Map is initialized");
+
+
+        AppExecutor.getInstance().diskIO().execute(() -> {
+            AppDatabase.getInstance(getContext());
+            setupViewModel();
+        });
 
 
         //Setting default map rules
@@ -418,8 +444,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                         mCountriesVisited.remove(id);
                         markerHashMap.remove(id);
                         updateStatisticNumbers();
+                        AppExecutor.getInstance().mainThread().execute(() -> setMarkers());
                     });
-
                 } else {
                     setMarkers();
                 }
@@ -447,7 +473,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
         //Set markers retrieved from database on now available map
-        //setMarkers();
+
 
         // Set the button for retrieving the current location and moving camera to it
         try {
@@ -511,16 +537,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         bundle.putSerializable(KEY_MARKER, markerHashMap);
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        //Retrieve markers from db
-        viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        AppExecutor.getInstance().diskIO().execute(() -> {
-            AppDatabase.getInstance(getContext());
-            setupViewModel();
-        });
-    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -530,4 +546,5 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
 }
+
 

@@ -60,6 +60,8 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private LinkedHashMap<Integer, String> mCountriesVisited;
     private FragmentProfileBinding profileBinding;
+    private int citiesVisited;
+    private int countriesVisited;
 
 
     public interface onSignedOutHandler {
@@ -284,8 +286,19 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     }
 
     public void updateStatisticNumbers() {
-        profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(markerHashMap.size()));
-        profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(mCountriesVisited.size()));
+        citiesVisited = markerHashMap.size();
+        countriesVisited = mCountriesVisited.size();
+        profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(citiesVisited));
+        profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(countriesVisited));
+        MapFragment.MapFragmentStatisticsListener statisticsListener = (MapFragment.MapFragmentStatisticsListener) Objects.requireNonNull(getContext());
+        statisticsListener.statisticsUpdate(citiesVisited, countriesVisited);
+        if(countriesVisited < 40){
+            profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.bronze_badge));
+        } else if(countriesVisited >= 40 && countriesVisited <= 80){
+            profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.silver_badge));
+        } else if(countriesVisited > 80){
+            profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.golden_badge));
+        }
     }
 
 }

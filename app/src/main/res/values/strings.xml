@@ -26,6 +26,7 @@
     <string name="fragment_statistics">Statistics</string>
     <string name="fragment_settings">Settings</string>
     <string name="fragment_user">User</string>
+    <string name="loading">Loading</string>
 
 
     <!--MarkerActivity-->
@@ -80,11 +81,14 @@
     <string name="btn_user_register">Register</string>
     <string name="sb_login_successfull">Successful login!</string>
     <string name="btn_login_sign_out">Sign out</string>
-
+    <string name="tv_skip_login">Skip for now</string>
 
     <string name="facebook_app_id">337061093492696</string>
     <string name="fb_login_protocol_scheme">fb337061093492696</string>
 
+    <!--Dialog password reset-->
+    <string name="btn_positive">Reset password</string>
+    <string name="btn_negative">Cancel</string>
 
     <!-- Register fragment-->
     <string name="register_email_de">Email</string>
@@ -104,6 +108,7 @@
     <string name="fragment_profile_achievement_countries">Number of \n countries visited</string>
     <string name="btn_profile_fragment_share">SHARE</string>
     <string name="logout">Sign out</string>
+    <string name="login">Sign in</string>
 
     <!--Errors-->
     <string name="error_pwd_mismatch">The passwords don\'t match!</string>

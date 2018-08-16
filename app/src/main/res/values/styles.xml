@@ -12,6 +12,7 @@
     </style>
 
 
+
     <style name="checkBoxStyle" parent="Preference.CheckBoxPreference.Material">
         <item name="colorAccent">@color/colorPrimaryDark</item>
         <item name="android:color">@color/colorPrimaryDark</item>
