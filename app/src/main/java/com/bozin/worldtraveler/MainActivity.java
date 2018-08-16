@@ -88,7 +88,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, R.color.textWhite));
 
         backStackCount = 0;
-        placesViewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
+        PlacesViewModelFactory factory = new PlacesViewModelFactory(getApplication());
+        placesViewModel = ViewModelProviders.of(this, factory).get(PlacesViewModel.class);
         setupViewModel();
 
 

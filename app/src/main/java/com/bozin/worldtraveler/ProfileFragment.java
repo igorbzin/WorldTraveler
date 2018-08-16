@@ -53,6 +53,7 @@ import java.util.Objects;
 public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
 
+    private final String TAG = "ProfileFragment";
     private GoogleMap mMap;
     private SupportMapFragment supportMapFragment;
     private PlacesViewModel viewModel;
@@ -108,14 +109,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
-        viewModel = ViewModelProviders.of(this).get(PlacesViewModel.class);
-        AppExecutor.getInstance().diskIO().execute(() -> {
-            AppDatabase.getInstance(getContext());
-            setupViewModel();
-        });
-
-
+        viewModel = ViewModelProviders.of(getActivity()).get(PlacesViewModel.class);
     }
 
 
@@ -128,8 +122,16 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        String mapStyle = getMapStyle();
+
+
+        AppExecutor.getInstance().diskIO().execute(() -> {
+            AppDatabase.getInstance(getContext());
+            setupViewModel();
+        });
+
         //Style the map
+
+        String mapStyle = getMapStyle();
         try {
             // Customise the styling of the base map using a JSON object defined
             // in a raw resource file.
@@ -157,14 +159,16 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
 
     private void setupViewModel() {
+        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, places -> {
-            Log.d("LIVEDATA", "Updating list of places from LiveData in ViewModel");
+            Log.d(TAG, "Updating list of places from LiveData in ViewModel");
             placesList = places;
             createMarkersFromPlaces();
-            if (markerHashMap != null) {
+            AppExecutor.getInstance().mainThread().execute(() -> {
                 setMarkers();
                 updateStatisticNumbers();
-            }
+            });
+
         });
     }
 
