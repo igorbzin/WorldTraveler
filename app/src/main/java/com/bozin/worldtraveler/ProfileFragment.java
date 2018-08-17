@@ -237,7 +237,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback() {
             Bitmap bitmap;
             File file;
-
             @Override
             public void onSnapshotReady(Bitmap snapshot) {
                 bitmap = snapshot;
