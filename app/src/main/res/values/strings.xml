@@ -82,6 +82,7 @@
     <string name="sb_login_successfull">Successful login!</string>
     <string name="btn_login_sign_out">Sign out</string>
     <string name="tv_skip_login">Skip for now</string>
+    <string name="tv_dialog_loading">Loading</string>
 
     <string name="facebook_app_id">337061093492696</string>
     <string name="fb_login_protocol_scheme">fb337061093492696</string>

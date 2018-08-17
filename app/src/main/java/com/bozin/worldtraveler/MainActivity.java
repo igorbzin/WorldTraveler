@@ -34,7 +34,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-import com.bozin.worldtraveler.data.Place;
 import com.bozin.worldtraveler.data.User;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -46,7 +45,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -71,7 +69,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int backStackCount;
     private DatabaseReference mdatabaseReference;
     private SharedPreferences sharedPreferences;
-    private Menu menu;
     private PlacesViewModel placesViewModel;
 
 
@@ -148,9 +145,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     private void setupViewModel() {
-        placesViewModel.getPlacesList().observe( this, places -> {
-            Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-            });
+        placesViewModel.getPlacesList().observe( this, places -> Log.d(TAG, "Updating list of places from LiveData in ViewModel"));
     }
 
 
@@ -348,7 +343,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         } else {
             inflater.inflate(R.menu.menu_logged_out, menu);
         }
-        this.menu = menu;
         return true;
     }
 

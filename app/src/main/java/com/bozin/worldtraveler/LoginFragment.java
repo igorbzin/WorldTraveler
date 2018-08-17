@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,7 +23,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+
 
 import com.bozin.worldtraveler.databinding.FragmentUserBinding;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -42,6 +45,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import java.util.Objects;
 
 
+
 public class LoginFragment extends BaseFragment implements
         View.OnClickListener {
 
@@ -54,6 +58,7 @@ public class LoginFragment extends BaseFragment implements
     private GoogleSignInClient mGoogleSignInClient;
     private FirebaseUser currentUser;
     private onLoggedInHandler mOnLoggedInHandler;
+    private AlertDialog loadingDialog;
 
 
     private static final int RC_SIGN_IN = 9001;
@@ -92,6 +97,7 @@ public class LoginFragment extends BaseFragment implements
         loginBinding.btnSignIn.setText(getString(R.string.btn_login));
         loginBinding.btnRegister.setText(getString(R.string.btn_user_register));
         etEmail.setHint(getString(R.string.tv_login_email));
+        loadingDialog = createLoadingDialog();
 
         //underline for textviews, set onclicklisteners
         TextView pwdForgotten = loginBinding.loginForgottenPwd;
@@ -136,6 +142,7 @@ public class LoginFragment extends BaseFragment implements
             if (!validateForm()) {
                 return;
             }
+            loadingDialog.show();
 
             email = etEmail.getText().toString();
             password = etPassword.getText().toString();
@@ -145,10 +152,11 @@ public class LoginFragment extends BaseFragment implements
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
+                            loadingDialog.dismiss();
                             updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
-
+                            loadingDialog.dismiss();
                             try {
                                 throw Objects.requireNonNull(task.getException());
                             } catch (FirebaseAuthException e) {
@@ -235,10 +243,12 @@ public class LoginFragment extends BaseFragment implements
                         // Sign in success, update UI with the signed-in user's information
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = mAuth.getCurrentUser();
+                        loadingDialog.dismiss();
                         updateUI(user);
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        loadingDialog.dismiss();
                         updateUI(null);
                     }
 
@@ -298,6 +308,7 @@ public class LoginFragment extends BaseFragment implements
     public void onClick(View v) {
         int i = v.getId();
         if (i == R.id.btn_google_sign_in) {
+            loadingDialog.show();
             signIn();
         }
     }
@@ -364,5 +375,19 @@ public class LoginFragment extends BaseFragment implements
         dialog.getButton(dialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.colorAccent));
     }
 
+
+    public AlertDialog createLoadingDialog() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+        // Get the layout inflater
+        LayoutInflater inflater = this.getLayoutInflater();
+        // Inflate and set the layout for the dialog
+        @SuppressLint("InflateParams") final View view = inflater.inflate(R.layout.dialog_loading, null);
+        Drawable drawable = getResources().getDrawable(R.drawable.progress_loading);
+        ProgressBar progressBar = view.findViewById(R.id.pb_loading_user);
+        progressBar.setProgressDrawable(drawable);
+        builder.setView(view);
+        return builder.create();
+    }
 
 }
