@@ -304,12 +304,13 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
             if (resultCode == Activity.RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(Objects.requireNonNull(getActivity()), data);
 
+                float zoom = mMap.getCameraPosition().zoom;
 
                 //Retrieve information about selected place and zoom into it
                 mLatLong = place.getLatLng();
                 CameraPosition cameraPosition = new CameraPosition.Builder()
                         .target(new LatLng(mLatLong.latitude, mLatLong.longitude))      // Sets the center of the map to location user
-                        .zoom(4)                   // Sets the zoom
+                        .zoom(zoom)                   // Sets the zoom
                         .build();                   // Creates a CameraPosition from the builder
                 mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 Log.d("Maps", "Place selected: " + place.getName());

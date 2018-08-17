@@ -234,7 +234,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
 
     public void snapShot() {
-
         GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback() {
             Bitmap bitmap;
             File file;
@@ -251,8 +250,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
-
             }
         };
         mMap.snapshot(callback);
