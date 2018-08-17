@@ -49,6 +49,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 
 public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
@@ -100,7 +108,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             supportMapFragment.getMapAsync(this);
         }
         getChildFragmentManager().beginTransaction().replace(R.id.fragment_profile_map, supportMapFragment).commit();
-
         return profileBinding.getRoot();
 
     }
@@ -293,11 +300,11 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(countriesVisited));
         MapFragment.MapFragmentStatisticsListener statisticsListener = (MapFragment.MapFragmentStatisticsListener) Objects.requireNonNull(getContext());
         statisticsListener.statisticsUpdate(citiesVisited, countriesVisited);
-        if(countriesVisited < 40){
+        if (countriesVisited < 40) {
             profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.bronze_badge));
-        } else if(countriesVisited >= 40 && countriesVisited <= 80){
+        } else if (countriesVisited >= 40 && countriesVisited <= 80) {
             profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.silver_badge));
-        } else if(countriesVisited > 80){
+        } else if (countriesVisited > 80) {
             profileBinding.ivProfileBadge.setImageDrawable(getResources().getDrawable(R.drawable.golden_badge));
         }
     }
