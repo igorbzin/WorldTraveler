@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.bozin.worldtraveler.databinding.FragmentUserBinding;
@@ -191,10 +192,7 @@ public class LoginFragment extends BaseFragment implements
                     });
 
         });
-
         return view;
-
-
     }
 
 
@@ -249,6 +247,7 @@ public class LoginFragment extends BaseFragment implements
                         // If sign in fails, display a message to the user.
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
                         loadingDialog.dismiss();
+                        Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
                         updateUI(null);
                     }
 
@@ -292,6 +291,7 @@ public class LoginFragment extends BaseFragment implements
                 // Google Sign In failed, update UI appropriately
                 Log.w(TAG, "Google sign in failed", e);
                 // [START_EXCLUDE]
+                Toast.makeText(getActivity(), e.toString(), Toast.LENGTH_LONG).show();
                 updateUI(null);
                 // [END_EXCLUDE]
             }

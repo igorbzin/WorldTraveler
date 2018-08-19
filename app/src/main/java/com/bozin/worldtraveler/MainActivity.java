@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         backStackCount = 0;
         PlacesViewModelFactory factory = new PlacesViewModelFactory(getApplication());
         placesViewModel = ViewModelProviders.of(this, factory).get(PlacesViewModel.class);
-        setupViewModel();
+
 
 
         mDrawerLayout = findViewById(R.id.drawer_layout);

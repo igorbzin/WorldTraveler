@@ -31,7 +31,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
-import com.bozin.worldtraveler.data.AppDatabase;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -387,10 +386,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         Log.v("Map", "Map is initialized");
 
 
-        AppExecutor.getInstance().diskIO().execute(() -> {
-            AppDatabase.getInstance(getContext());
-            setupViewModel();
-        });
+        setupViewModel();
 
 
         //Setting default map rules
@@ -445,7 +441,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                         mCountriesVisited.remove(id);
                         markerHashMap.remove(id);
                         updateStatisticNumbers();
-                        AppExecutor.getInstance().mainThread().execute(() -> setMarkers());
                     });
                 } else {
                     setMarkers();

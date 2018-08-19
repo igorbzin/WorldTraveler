@@ -10,7 +10,6 @@ public class PlacesRepository {
     private LiveData<List<Place>> mPlacesList;
 
 
-
     public PlacesRepository(Application application) {
         AppDatabase db = AppDatabase.getInstance(application);
         mPlacesDao = db.placesDao();

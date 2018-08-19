@@ -116,6 +116,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+
         viewModel = ViewModelProviders.of(getActivity()).get(PlacesViewModel.class);
     }
 
@@ -130,11 +131,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-
-        AppExecutor.getInstance().diskIO().execute(() -> {
-            AppDatabase.getInstance(getContext());
-            setupViewModel();
-        });
+        setupViewModel();
 
         //Style the map
 
@@ -171,13 +168,10 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
             placesList = places;
             createMarkersFromPlaces();
-            AppExecutor.getInstance().mainThread().execute(() -> {
-                setMarkers();
-                updateStatisticNumbers();
-            });
-
-        });
-    }
+            setMarkers();
+            updateStatisticNumbers();
+    });
+}
 
     private String getMapStyle() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
