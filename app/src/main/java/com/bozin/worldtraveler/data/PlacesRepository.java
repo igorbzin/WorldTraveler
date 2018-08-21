@@ -2,7 +2,11 @@ package com.bozin.worldtraveler.data;
 
 import android.app.Application;
 import android.arch.lifecycle.LiveData;
+
 import java.util.List;
+
+import io.reactivex.Completable;
+import io.reactivex.Single;
 
 public class PlacesRepository {
 
@@ -21,12 +25,20 @@ public class PlacesRepository {
     }
 
 
-    public void insertPlace(Place place){
-        mPlacesDao.insertPlace(place);
+    public Single<Place> getPlace(int id) {
+        return mPlacesDao.loadPlaceById(id);
+    }
+
+    public void updatePlace(int markerId, String picturePaths) {
+         mPlacesDao.updatePlace(markerId, picturePaths);
+    }
+
+    public void insertPlace(Place place) {
+         mPlacesDao.insertPlace(place);
     }
 
 
-    public void deletePlaceByID(int id){
+    public void deletePlaceByID(int id) {
         mPlacesDao.deleteByPlaceId(id);
     }
 }

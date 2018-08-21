@@ -100,5 +100,6 @@ public class StatisticsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_statistics);
+        ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_statistics);
     }
 }

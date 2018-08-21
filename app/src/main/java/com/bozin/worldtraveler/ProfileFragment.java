@@ -27,9 +27,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.bozin.worldtraveler.data.AppDatabase;
-import com.bozin.worldtraveler.data.AppExecutor;
-import com.bozin.worldtraveler.data.Place;
+import com.bozin.worldtraveler.ViewModels.PlacesViewModel;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -49,10 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Observer;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -65,12 +61,8 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mMap;
     private SupportMapFragment supportMapFragment;
     private PlacesViewModel viewModel;
-    private List<Place> placesList = new ArrayList<>();
-    private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
     private LinkedHashMap<Integer, String> mCountriesVisited;
     private FragmentProfileBinding profileBinding;
-    private int citiesVisited;
-    private int countriesVisited;
 
 
     public interface onSignedOutHandler {
@@ -91,7 +83,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         profileBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
         GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
-        markerHashMap = new LinkedHashMap<>();
         mCountriesVisited = new LinkedHashMap<>();
 
         try {
@@ -116,15 +107,14 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
-        viewModel = ViewModelProviders.of(getActivity()).get(PlacesViewModel.class);
+        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
     }
 
 
     @Override
     public void onResume() {
         super.onResume();
-
+        ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_user);
     }
 
     @Override
@@ -166,10 +156,33 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-            placesList = places;
-            createMarkersFromPlaces();
-            setMarkers();
-            updateStatisticNumbers();
+
+            if (places != null) {
+                Single.just(places)
+                        .map(this::createMarkersFromPlaces)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new SingleObserver<LinkedHashMap<Integer, MarkerOptions>>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
+                            }
+
+                            @Override
+                            public void onSuccess(LinkedHashMap<Integer, MarkerOptions> hashMap) {
+                                setMarkers(hashMap);
+                                updateStatisticNumbers(hashMap);
+                                Log.d(TAG, "Succesfully loaded markers from database");
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                            Log.d(TAG, "Error loading the markers from database");
+                            }
+                        });
+            }
+
+
     });
 }
 
@@ -178,12 +191,13 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         return sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
     }
 
-    private void createMarkersFromPlaces() {
-        for (int i = 0; i < placesList.size(); i++) {
-            com.bozin.worldtraveler.data.Place place = placesList.get(i);
+    private LinkedHashMap<Integer, MarkerOptions> createMarkersFromPlaces(List<Place> places) {
+        LinkedHashMap<Integer, MarkerOptions> hashMap = new LinkedHashMap<>();
+        for (Place place : places) {
             MarkerOptions markerOptions = createMarkerOptions(place);
-            markerHashMap.put(place.getPlaceID(), markerOptions);
+            hashMap.put(place.getPlaceID(), markerOptions);
         }
+        return hashMap;
     }
 
     private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
@@ -208,9 +222,9 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    private void setMarkers() {
+    private void setMarkers(LinkedHashMap<Integer, MarkerOptions> hashMap) {
         mMap.clear();
-        ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(markerHashMap.values());
+        ArrayList<MarkerOptions> markerOptionsList = new ArrayList<>(hashMap.values());
         for (int i = 0; i < markerOptionsList.size(); i++) {
             MarkerOptions option = markerOptionsList.get(i);
             mMap.addMarker(option);
@@ -287,9 +301,9 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         StrictMode.setVmPolicy(builder.build());
     }
 
-    public void updateStatisticNumbers() {
-        citiesVisited = markerHashMap.size();
-        countriesVisited = mCountriesVisited.size();
+    public void updateStatisticNumbers(LinkedHashMap<Integer, MarkerOptions> hashMap) {
+        int citiesVisited = hashMap.size();
+        int countriesVisited = mCountriesVisited.size();
         profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(citiesVisited));
         profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(countriesVisited));
         MapFragment.MapFragmentStatisticsListener statisticsListener = (MapFragment.MapFragmentStatisticsListener) Objects.requireNonNull(getContext());
@@ -303,4 +317,9 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        ((MainActivity) Objects.requireNonNull(getActivity())).uncheckNavItem(R.id.menu_item_user);
+    }
 }

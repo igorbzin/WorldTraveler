@@ -31,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
+import com.bozin.worldtraveler.ViewModels.PlacesViewModel;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -127,7 +128,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_map);
         markerHashMap = new LinkedHashMap<>();
         mCountriesVisited = new LinkedHashMap<>();
 
@@ -523,6 +523,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public void onResume() {
         super.onResume();
         motionLayout.transitionToEnd();
+        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_map);
+        ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_maps);
     }
 
     @Override

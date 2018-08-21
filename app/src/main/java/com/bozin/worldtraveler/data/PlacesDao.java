@@ -8,6 +8,9 @@ import android.arch.persistence.room.Query;
 
 import java.util.List;
 
+import io.reactivex.Completable;
+import io.reactivex.Single;
+
 @Dao
 public interface PlacesDao {
 
@@ -15,7 +18,7 @@ public interface PlacesDao {
     LiveData<List<Place>> loadAllPlaces();
 
     @Query("SELECT * FROM cities WHERE _ID = :placeId")
-    Place loadPlaceById(int placeId);
+    Single<Place> loadPlaceById(int placeId);
 
     @Query("UPDATE cities SET picture_uris=:pictureUris WHERE _ID = :id")
     void updatePlace(int id, String pictureUris);

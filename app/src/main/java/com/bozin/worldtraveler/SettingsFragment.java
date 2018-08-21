@@ -2,6 +2,7 @@ package com.bozin.worldtraveler;
 
 import android.os.Bundle;
 import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.PreferenceScreen;
 
 import java.util.Objects;
 
@@ -21,5 +22,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onResume() {
         super.onResume();
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_settings);
+        ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_settings);
+
     }
 }

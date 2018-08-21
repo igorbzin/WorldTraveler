@@ -46,7 +46,6 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import java.util.Objects;
 
 
-
 public class LoginFragment extends BaseFragment implements
         View.OnClickListener {
 
@@ -250,8 +249,6 @@ public class LoginFragment extends BaseFragment implements
                         Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
                         updateUI(null);
                     }
-
-
                 });
     }
 
@@ -338,8 +335,13 @@ public class LoginFragment extends BaseFragment implements
     public void onResume() {
         super.onResume();
         mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
         updateUI(currentUser);
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
+        if(currentUser == null){
+            ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_login);
+        }
+
     }
 
     @SuppressLint("InflateParams")
@@ -377,7 +379,6 @@ public class LoginFragment extends BaseFragment implements
 
 
     public AlertDialog createLoadingDialog() {
-
         AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
         // Get the layout inflater
         LayoutInflater inflater = this.getLayoutInflater();
@@ -390,4 +391,11 @@ public class LoginFragment extends BaseFragment implements
         return builder.create();
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        if(currentUser == null){
+            ((MainActivity) Objects.requireNonNull(getActivity())).uncheckNavItem(R.id.menu_item_login);
+        }
+    }
 }
