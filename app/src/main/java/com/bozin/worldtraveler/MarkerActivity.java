@@ -20,19 +20,18 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import com.bozin.worldtraveler.Adapters.PictureRvAdapter;
-import com.bozin.worldtraveler.ViewModels.MarkerViewModel;
-import com.bozin.worldtraveler.ViewModels.MarkerViewModelFactory;
+import com.bozin.worldtraveler.adapters.PictureRvAdapter;
 import com.bozin.worldtraveler.model.RxObservableList;
+import com.bozin.worldtraveler.viewModels.MarkerViewModel;
+import com.bozin.worldtraveler.viewModels.MarkerViewModelFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
-import io.reactivex.SingleObserver;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DisposableObserver;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
@@ -43,14 +42,12 @@ import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
 
 public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureActionHandler {
 
-
     private final String TAG = "MarkerActivity";
-    private ArrayList<Uri> mPictureUris;
     private RecyclerView mPicturesRV;
     private PictureRvAdapter mAdapter;
     public final static int PICK_PHOTO_CODE = 11;
     private MarkerViewModel viewModel;
-    private RxObservableList.ObservableList<Uri> uriObservableList;
+    private RxObservableList<Uri> uriObservableList;
 
     private ConstraintLayout constraintLayout_start;
     private ConstraintSet constraintSetStart = new ConstraintSet();
@@ -58,13 +55,12 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private ConstraintSet constraintSetSnackbar = new ConstraintSet();
 
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint({"StaticFieldLeak", "CheckResult"})
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         final Intent mIntent = getIntent();
         int mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
-        mPictureUris = new ArrayList<>();
 
         //Inflate layout, set display metrics
         super.onCreate(savedInstanceState);
@@ -89,69 +85,68 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
         MarkerViewModelFactory factory = new MarkerViewModelFactory(getApplication(), mCurrentMarkerID);
         viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
 
-        uriObservableList = new RxObservableList.ObservableList<>();
 
-        for(Uri uri: mPictureUris){
-            uriObservableList.add(uri);
-        }
+        //Init Adapter
+        mAdapter = new PictureRvAdapter(MarkerActivity.this, new ArrayList<>(), MarkerActivity.this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(MarkerActivity.this, LinearLayoutManager.VERTICAL, false);
+        DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
+        mPicturesRV.addItemDecoration(decoration);
+        mPicturesRV.setLayoutManager(layoutManager);
+        mPicturesRV.setAdapter(mAdapter);
 
-        uriObservableList.getObservable()
+
+        viewModel.getPlace()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableObserver<Uri>() {
-                    @Override
-                    public void onNext(Uri uri) {
+                .map(place -> viewModel.getPicturePaths(place))
+                .toObservable()
+                .concatMap((Function<ArrayList<Uri>, Observable<RxObservableList<Uri>>>) uriArrayList -> {
 
+                    mAdapter.updatePictures(uriArrayList);
+                    beginTransition(constraintSetEnd, 850);
+
+                    Log.d(TAG, "Adapter pictures updated");
+                    uriObservableList = new RxObservableList<>(uriArrayList);
+
+                    return uriObservableList.getObservable()
+                            .observeOn(Schedulers.io())
+                            .doOnNext(uris -> {
+                                Log.d(TAG, "Current List size: " + uris.getList().size());
+                                String pathString = viewModel.makePathString(uris.getList());
+                                viewModel.updatePicturePaths(pathString);
+                                Log.d(TAG, "Updated pictures in database");
+                            });
+                    //return Observable.just(uriObservableList);
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<RxObservableList<Uri>>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.d(TAG, "Onsubscribe called");
+                    }
+
+                    @Override
+                    public void onNext(RxObservableList<Uri> uris) {
+                        mAdapter.updatePictures(uris.getList());
+                        Log.d(TAG, "Adapter pictures updated, list size: " + uriObservableList.getList().size());
                     }
 
                     @Override
                     public void onError(Throwable e) {
-
+                        Log.d(TAG, "OnError : " + e);
                     }
 
                     @Override
                     public void onComplete() {
-
+                        Log.d(TAG, "OnComplete called");
                     }
                 });
-
-        viewModel.getPlace()
-                .map(this::getPicturePaths)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleObserver<ArrayList<Uri>>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onSuccess(ArrayList<Uri> uris) {
-
-                        mAdapter = new PictureRvAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
-                        LinearLayoutManager layoutManager = new LinearLayoutManager(MarkerActivity.this, LinearLayoutManager.VERTICAL, false);
-                        DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
-                        mPicturesRV.addItemDecoration(decoration);
-                        mPicturesRV.setLayoutManager(layoutManager);
-                        mPicturesRV.setAdapter(mAdapter);
-                        beginTransition(constraintSetEnd, 850);
-                        Log.d(TAG, "Successfully loaded pictures");
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.d(TAG, "Error loading pictures from database");
-
-                    }
-                });
-
-
-
 
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder
+                    viewHolder, RecyclerView.ViewHolder target) {
                 return false;
             }
 
@@ -160,13 +155,15 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
             public synchronized void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 beginTransition(constraintSetSnackbar, 300);
                 mAdapter.onItemRemove(viewHolder, mPicturesRV);
+
             }
-
-
         }).attachToRecyclerView(mPicturesRV);
 
+
         Button mBtnAddImage = findViewById(R.id.btn_add_images);
-        mBtnAddImage.setOnClickListener(v -> {
+        mBtnAddImage.setOnClickListener(v ->
+
+        {
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -187,8 +184,8 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                     ClipData.Item item = mClipData.getItemAt(i);
                     Uri uri = item.getUri();
                     //getContentResolver().takePersistableUriPermission(uri, flags);
-                    mPictureUris.add(uri);
-
+                    uriObservableList.add(uri);
+                    Log.d(TAG, "Uri added to uriObservableList: " + uri.toString());
                 }
             }
 
@@ -196,13 +193,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
-    private String makePathString(ArrayList<Uri> uriArrayList) {
-        StringBuilder uriString = new StringBuilder();
-        for (Uri uri : uriArrayList) {
-            uriString.append(uri.toString()).append(",");
-        }
-        return uriString.toString();
-    }
+
 
     @Override
     public void onPictureClick(Uri uri) {
@@ -214,24 +205,11 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
     @Override
-    public void onPictureSwipe(int duration) {
+    public void onPictureSwipe(int duration, ArrayList<Uri> uris) {
+        uriObservableList.setList(uris);
         beginTransition(constraintSetEnd, duration);
-    }
-
-    //Get Picture Uris from DB
-    private ArrayList<Uri> getPicturePaths(Place place) {
-        ArrayList<Uri> picturePathList = new ArrayList<>();
-        String pictureUriString = place.getPicture_uris();
-        if (pictureUriString != null && !pictureUriString.equals("")) {
-            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0; i < pathStringsArrayList.size(); i++) {
-                String path = pathStringsArrayList.get(i);
-                picturePathList.add(Uri.parse(path));
-            }
         }
-        Log.d(TAG, "Picture uris successfully loaded");
-        return picturePathList;
-    }
+
 
 
     private void beginTransition(ConstraintSet constraintSet, int duration) {
@@ -244,6 +222,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private void delayedFinish() {
         super.finish();
     }
+
 
     @Override
     public void finish() {

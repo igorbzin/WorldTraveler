@@ -9,6 +9,8 @@ import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.util.Log;
 
+import com.bozin.worldtraveler.model.Place;
+
 @Database(entities = {Place.class}, version = 2 , exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 

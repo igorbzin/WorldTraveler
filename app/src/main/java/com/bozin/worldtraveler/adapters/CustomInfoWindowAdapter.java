@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler.Adapters;
+package com.bozin.worldtraveler.adapters;
 
 import com.bozin.worldtraveler.R;
 

@@ -3,7 +3,10 @@ package com.bozin.worldtraveler.data;
 import android.app.Application;
 import android.arch.lifecycle.LiveData;
 
+import com.bozin.worldtraveler.model.Place;
+
 import java.util.List;
+import java.util.Observable;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -30,7 +33,7 @@ public class PlacesRepository {
     }
 
     public void updatePlace(int markerId, String picturePaths) {
-         mPlacesDao.updatePlace(markerId, picturePaths);
+        mPlacesDao.updatePlace(markerId, picturePaths);
     }
 
     public void insertPlace(Place place) {

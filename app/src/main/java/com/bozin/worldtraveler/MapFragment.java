@@ -30,8 +30,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bozin.worldtraveler.Adapters.CustomInfoWindowAdapter;
-import com.bozin.worldtraveler.ViewModels.PlacesViewModel;
+import com.bozin.worldtraveler.adapters.CustomInfoWindowAdapter;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -70,7 +70,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     private final String TAG = "Map";
     private GoogleMap mMap;
-    private List<com.bozin.worldtraveler.data.Place> placesList = new ArrayList<>();
+    private List<com.bozin.worldtraveler.model.Place> placesList = new ArrayList<>();
     private LatLng mLatLong;
     private TextView tv_delete;
     private Button mAddButton;
@@ -217,7 +217,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         });
     }
 
-    private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
+    private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.model.Place place) {
         String city = place.getCity_name();
         String country = place.getCountry_name();
         double latitude = place.getLatitude();
@@ -237,7 +237,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     private void createMarkersFromPlaces() {
         for (int i = 0; i < placesList.size(); i++) {
-            com.bozin.worldtraveler.data.Place place = placesList.get(i);
+            com.bozin.worldtraveler.model.Place place = placesList.get(i);
             MarkerOptions markerOptions = createMarkerOptions(place);
             markerHashMap.put(place.getPlaceID(), markerOptions);
         }
@@ -269,7 +269,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     }
 
 
-    private void insertPlace(com.bozin.worldtraveler.data.Place place) {
+    private void insertPlace(com.bozin.worldtraveler.model.Place place) {
         viewModel.insertPlace(place);
     }
 
@@ -368,7 +368,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 placeAdded.show();
 
 
-                final com.bozin.worldtraveler.data.Place dbPlace = new com.bozin.worldtraveler.data.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
+                final com.bozin.worldtraveler.model.Place dbPlace = new com.bozin.worldtraveler.model.Place(city, country, mLatLong.latitude, mLatLong.longitude, null);
                 AppExecutor.getInstance().diskIO().execute(() -> insertPlace(dbPlace));
             } else {
                 Toast.makeText(getContext(), "There was an error adding the city, please try again!", Toast.LENGTH_LONG).show();

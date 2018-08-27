@@ -6,7 +6,10 @@ import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 
 
+import com.bozin.worldtraveler.model.Place;
+
 import java.util.List;
+import java.util.Observable;
 
 import io.reactivex.Completable;
 import io.reactivex.Single;

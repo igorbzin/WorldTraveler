@@ -28,8 +28,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bozin.worldtraveler.ViewModels.PlacesViewModel;
-import com.bozin.worldtraveler.ViewModels.PlacesViewModelFactory;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
+import com.bozin.worldtraveler.viewModels.PlacesViewModelFactory;
 import com.bozin.worldtraveler.data.User;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -40,8 +40,6 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-
 
 
 /**
@@ -186,13 +184,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void setNavItemChecked(int resId) {
         Menu m = mNavigationView.getMenu();
         MenuItem menuItem = m.findItem(resId);
-        menuItem.setChecked(true);
+        if (menuItem != null) {
+            menuItem.setChecked(true);
+        }
     }
 
     public void uncheckNavItem(int resId) {
         Menu m = mNavigationView.getMenu();
         MenuItem menuItem = m.findItem(resId);
-        menuItem.setChecked(false);
+        if (menuItem != null) {
+            menuItem.setChecked(false);
+        }
     }
 
 

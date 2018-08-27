@@ -27,8 +27,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.bozin.worldtraveler.ViewModels.PlacesViewModel;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
+import com.bozin.worldtraveler.model.Place;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -200,7 +201,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         return hashMap;
     }
 
-    private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.data.Place place) {
+    private MarkerOptions createMarkerOptions(Place place) {
         String city = place.getCity_name();
         String country = place.getCountry_name();
         double latitude = place.getLatitude();
@@ -319,7 +320,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onPause() {
-        super.onPause();
         ((MainActivity) Objects.requireNonNull(getActivity())).uncheckNavItem(R.id.menu_item_user);
+        super.onPause();
     }
 }
