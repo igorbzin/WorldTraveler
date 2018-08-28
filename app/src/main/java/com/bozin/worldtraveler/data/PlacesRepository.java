@@ -23,6 +23,7 @@ public class PlacesRepository {
         mPlacesList = mPlacesDao.loadAllPlaces();
     }
 
+    
     public LiveData<List<Place>> getAllPlaces() {
         return mPlacesList;
     }
