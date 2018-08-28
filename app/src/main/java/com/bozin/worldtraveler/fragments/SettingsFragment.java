@@ -1,8 +1,11 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 import android.os.Bundle;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
+
+import com.bozin.worldtraveler.MainActivity;
+import com.bozin.worldtraveler.R;
 
 import java.util.Objects;
 

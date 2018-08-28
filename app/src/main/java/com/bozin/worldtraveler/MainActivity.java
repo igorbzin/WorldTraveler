@@ -28,9 +28,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bozin.worldtraveler.fragments.LoginFragment;
+import com.bozin.worldtraveler.fragments.MapFragment;
+import com.bozin.worldtraveler.fragments.ProfileFragment;
+import com.bozin.worldtraveler.fragments.SettingsFragment;
+import com.bozin.worldtraveler.fragments.StatisticsFragment;
 import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.bozin.worldtraveler.viewModels.PlacesViewModelFactory;
-import com.bozin.worldtraveler.data.User;
+import com.bozin.worldtraveler.model.User;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;

@@ -55,6 +55,7 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
     implementation 'com.android.support.constraint:constraint-layout:2.0.0-alpha2'
@@ -67,12 +68,14 @@ dependencies {
     // Facebook Android SDK (only required for Facebook Login)
     // Used in FacebookLoginActivity.
     implementation 'com.facebook.android:facebook-login:4.35.0'
+
     //Room
     implementation 'android.arch.persistence.room:runtime:1.1.1'
     annotationProcessor "android.arch.persistence.room:compiler:1.1.1"
     implementation 'android.arch.lifecycle:extensions:1.1.1'
     implementation 'android.arch.persistence.room:rxjava2:1.1.1'
     annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
+
     //Picasso
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.mikhaellopez:circularimageview:3.2.0'

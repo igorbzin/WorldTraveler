@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 import android.app.Activity;
 import android.databinding.DataBindingUtil;
@@ -17,7 +17,9 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.databinding.FragmentRegisterBinding;
+import com.bozin.worldtraveler.fragments.LoginFragment;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;

@@ -14,7 +14,10 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ImageView;
 
+
+import com.squareup.picasso.Picasso;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,6 +51,8 @@ public class EntryActivity extends AppCompatActivity implements ActivityCompat.O
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entry);
+        ImageView logo = findViewById(R.id.iv_logo_entry_activity);
+        Picasso.get().load(R.drawable.color_logo_transparent).fit().into(logo);
         permissionsRequest();
 
     }

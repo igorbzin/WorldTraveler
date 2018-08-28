@@ -3,7 +3,6 @@ package com.bozin.worldtraveler.viewModels;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.net.Uri;
-import android.util.Log;
 
 import com.bozin.worldtraveler.data.PlacesRepository;
 import com.bozin.worldtraveler.model.Place;
@@ -11,9 +10,7 @@ import com.bozin.worldtraveler.model.Place;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Observable;
 
-import io.reactivex.Completable;
 import io.reactivex.Single;
 
 public class MarkerViewModel extends AndroidViewModel {
@@ -58,16 +55,20 @@ public class MarkerViewModel extends AndroidViewModel {
                 picturePathList.add(Uri.parse(path));
             }
         }
-        return picturePathList;
+        uriArrayList = picturePathList;
+        return uriArrayList;
     }
 
-    public String makePathString(ArrayList<Uri> uriArrayList) {
+    public ArrayList<Uri> getUriArrayList() {
+        return uriArrayList;
+    }
+
+    public String makePathString(ArrayList<Uri> uris) {
         StringBuilder uriString = new StringBuilder();
-        for (Uri uri : uriArrayList) {
+        for (Uri uri : uris) {
             uriString.append(uri.toString()).append(",");
         }
         return uriString.toString();
     }
-
 
 }

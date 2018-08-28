@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 
 import android.annotation.SuppressLint;
@@ -30,9 +30,12 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bozin.worldtraveler.MainActivity;
+import com.bozin.worldtraveler.MarkerActivity;
+import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.adapters.CustomInfoWindowAdapter;
-import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.bozin.worldtraveler.data.AppExecutor;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -45,7 +48,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
@@ -57,7 +59,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-
 import java.util.Objects;
 
 
@@ -70,7 +71,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
     private final String TAG = "Map";
     private GoogleMap mMap;
-    private List<com.bozin.worldtraveler.model.Place> placesList = new ArrayList<>();
     private LatLng mLatLong;
     private TextView tv_delete;
     private Button mAddButton;
@@ -78,13 +78,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private Animation mStartFadeOutAnimation;
     private int mCameraPosition;
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
-    private LinkedHashMap<Integer, String> mCountriesVisited;
     private PlacesViewModel viewModel;
     private MotionLayout motionLayout;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
-    private final String KEY_MARKER = "markers";
-    private Bundle bundle;
 
     private MapFragmentStatisticsListener mCallback;
     private FusedLocationProviderClient mFusedLocationClient;
@@ -128,8 +125,6 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        markerHashMap = new LinkedHashMap<>();
-        mCountriesVisited = new LinkedHashMap<>();
 
 
         // This makes sure that the container activity has implemented
@@ -141,15 +136,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                     + " must implement MapfragmentStatisticsListener");
         }
 
-        if (bundle != null) {
-            try {
-                markerHashMap = (LinkedHashMap<Integer, MarkerOptions>) bundle.getSerializable(KEY_MARKER);
-                Log.d(TAG, "Markerhashmap from bundle restored");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
-        }
 
 
         //Set up location manager
@@ -210,45 +197,16 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
         viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-            placesList = places;
-            createMarkersFromPlaces();
-            AppExecutor.getInstance().mainThread().execute(this::setMarkers);
+            viewModel.createMarkersFromPlaces(places);
+            markerHashMap = viewModel.getPlacesHashMap();
+            AppExecutor.getInstance().mainThread().execute(() -> setMarkers(markerHashMap));
             updateStatisticNumbers();
         });
     }
 
-    private MarkerOptions createMarkerOptions(com.bozin.worldtraveler.model.Place place) {
-        String city = place.getCity_name();
-        String country = place.getCountry_name();
-        double latitude = place.getLatitude();
-        double longitude = place.getLongitude();
-        int markerId = place.getPlaceID();
-        LatLng latLng = new LatLng(latitude, longitude);
-
-        if (!mCountriesVisited.containsValue(country)) {
-            mCountriesVisited.put(markerId, country);
-        }
-
-        return new MarkerOptions().title(city)
-                .snippet("" + markerId).position(latLng).draggable(true)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-    }
-
-
-    private void createMarkersFromPlaces() {
-        for (int i = 0; i < placesList.size(); i++) {
-            com.bozin.worldtraveler.model.Place place = placesList.get(i);
-            MarkerOptions markerOptions = createMarkerOptions(place);
-            markerHashMap.put(place.getPlaceID(), markerOptions);
-        }
-        Log.v(TAG, "Hashmap size is " + markerHashMap.size());
-
-
-    }
-
 
     //Function to set all markers retrieved from database
-    private void setMarkers() {
+    private void setMarkers(LinkedHashMap<Integer, MarkerOptions> markerHashMap) {
         if (mMap != null) {
             mMap.clear();
             Log.v(TAG, "Map is cleared");
@@ -342,11 +300,11 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 //Check if selected place was already added
 
+                ArrayList<MarkerOptions> places = new ArrayList<>(viewModel.getPlacesHashMap().values());
 
-                if (markerHashMap.size() != 0) {
-                    for (int i = 0; i < markerHashMap.size(); i++) {
-                        MarkerOptions marker = (new ArrayList<>(markerHashMap.values()).get(i));
-                        if (marker.getPosition().latitude == mLatLong.latitude && marker.getPosition().longitude == mLatLong.longitude) {
+                if (places.size() != 0) {
+                    for (MarkerOptions markerOptions: places) {
+                        if (markerOptions.getPosition().latitude == mLatLong.latitude && markerOptions.getPosition().longitude == mLatLong.longitude) {
                             Snackbar duplicate = Snackbar.make(getActivity().findViewById(R.id.drawer_layout), R.string.snackbar_duplicate, Snackbar.LENGTH_LONG);
                             View sb_duplicateView = duplicate.getView();
                             TextView tv_sb_duplicate = sb_duplicateView.findViewById(android.support.design.R.id.snackbar_text);
@@ -438,12 +396,12 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                 if (screenPosition.y >= tv_delete_top_boundry) {
                     AppExecutor.getInstance().diskIO().execute(() -> {
                         deletePlaceById(id);
-                        mCountriesVisited.remove(id);
-                        markerHashMap.remove(id);
+                        viewModel.removeCountry(id);
+                        viewModel.removeMarker(id);
                         updateStatisticNumbers();
                     });
                 } else {
-                    setMarkers();
+                    setMarkers(viewModel.getPlacesHashMap());
                 }
 
 
@@ -508,8 +466,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     public void updateStatisticNumbers() {
-        int numberofCities = markerHashMap.size();
-        int numberOfCountries = mCountriesVisited.size();
+        int numberofCities = viewModel.getPlacesHashMap().size();
+        int numberOfCountries = viewModel.getCountriesVisited().size();
         mCallback.statisticsUpdate(numberofCities, numberOfCountries);
     }
 
@@ -531,7 +489,8 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     public void onPause() {
         super.onPause();
         motionLayout.transitionToStart();
-        bundle = new Bundle();
+        Bundle bundle = new Bundle();
+        String KEY_MARKER = "markers";
         bundle.putSerializable(KEY_MARKER, markerHashMap);
     }
 

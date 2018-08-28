@@ -1,7 +1,6 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 
-import android.annotation.SuppressLint;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
@@ -9,10 +8,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
@@ -20,22 +16,21 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.graphics.drawable.DrawableCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.bozin.worldtraveler.viewModels.PlacesViewModel;
+import com.bozin.worldtraveler.MainActivity;
+import com.bozin.worldtraveler.R;
+import com.bozin.worldtraveler.data.AppExecutor;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
-import com.bozin.worldtraveler.model.Place;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -45,14 +40,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Objects;
-
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 
 public class ProfileFragment extends Fragment implements OnMapReadyCallback {
@@ -157,33 +145,10 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-
-            if (places != null) {
-                Single.just(places)
-                        .map(this::createMarkersFromPlaces)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new SingleObserver<LinkedHashMap<Integer, MarkerOptions>>() {
-                            @Override
-                            public void onSubscribe(Disposable d) {
-
-                            }
-
-                            @Override
-                            public void onSuccess(LinkedHashMap<Integer, MarkerOptions> hashMap) {
-                                setMarkers(hashMap);
-                                updateStatisticNumbers(hashMap);
-                                Log.d(TAG, "Succesfully loaded markers from database");
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-                            Log.d(TAG, "Error loading the markers from database");
-                            }
-                        });
-            }
-
-
+            viewModel.createMarkersFromPlaces(places, 1, getContext());
+            LinkedHashMap<Integer,MarkerOptions> markerHashMap = viewModel.getPlacesHashMap();
+            AppExecutor.getInstance().mainThread().execute(() -> setMarkers(markerHashMap));
+            updateStatisticNumbers();
     });
 }
 
@@ -192,35 +157,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         return sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
     }
 
-    private LinkedHashMap<Integer, MarkerOptions> createMarkersFromPlaces(List<Place> places) {
-        LinkedHashMap<Integer, MarkerOptions> hashMap = new LinkedHashMap<>();
-        for (Place place : places) {
-            MarkerOptions markerOptions = createMarkerOptions(place);
-            hashMap.put(place.getPlaceID(), markerOptions);
-        }
-        return hashMap;
-    }
-
-    private MarkerOptions createMarkerOptions(Place place) {
-        String city = place.getCity_name();
-        String country = place.getCountry_name();
-        double latitude = place.getLatitude();
-        double longitude = place.getLongitude();
-        int markerId = place.getPlaceID();
-        LatLng latLng = new LatLng(latitude, longitude);
-
-
-        if (!mCountriesVisited.containsValue(country)) {
-            mCountriesVisited.put(markerId, country);
-        }
-
-        Bitmap b = getBitmapFromVectorDrawable(getContext(), R.drawable.ic_location_on_black_24dp);
-        Bitmap bhalfsize = Bitmap.createScaledBitmap(b, b.getWidth() / 2, b.getHeight() / 2, false);
-
-        return new MarkerOptions().title(city)
-                .snippet(country).position(latLng).draggable(true)
-                .icon(BitmapDescriptorFactory.fromBitmap(bhalfsize));
-    }
 
 
     private void setMarkers(LinkedHashMap<Integer, MarkerOptions> hashMap) {
@@ -232,21 +168,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    @SuppressLint("ObsoleteSdkInt")
-    public static Bitmap getBitmapFromVectorDrawable(Context context, int drawableId) {
-        Drawable drawable = ContextCompat.getDrawable(context, drawableId);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            drawable = (DrawableCompat.wrap(Objects.requireNonNull(drawable))).mutate();
-        }
-
-        Bitmap bitmap = Bitmap.createBitmap(Objects.requireNonNull(drawable).getIntrinsicWidth(),
-                drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-
-        return bitmap;
-    }
 
 
     public void snapShot() {
@@ -302,9 +223,9 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         StrictMode.setVmPolicy(builder.build());
     }
 
-    public void updateStatisticNumbers(LinkedHashMap<Integer, MarkerOptions> hashMap) {
-        int citiesVisited = hashMap.size();
-        int countriesVisited = mCountriesVisited.size();
+    public void updateStatisticNumbers() {
+        int citiesVisited = viewModel.getPlacesHashMap().size();
+        int countriesVisited = viewModel.getCountriesVisited().size();
         profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(citiesVisited));
         profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(countriesVisited));
         MapFragment.MapFragmentStatisticsListener statisticsListener = (MapFragment.MapFragmentStatisticsListener) Objects.requireNonNull(getContext());

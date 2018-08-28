@@ -116,7 +116,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                                 viewModel.updatePicturePaths(pathString);
                                 Log.d(TAG, "Updated pictures in database");
                             });
-                    //return Observable.just(uriObservableList);
                 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<RxObservableList<Uri>>() {
@@ -183,7 +182,6 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
                 for (int i = 0; i < mClipData.getItemCount(); i++) {
                     ClipData.Item item = mClipData.getItemAt(i);
                     Uri uri = item.getUri();
-                    //getContentResolver().takePersistableUriPermission(uri, flags);
                     uriObservableList.add(uri);
                     Log.d(TAG, "Uri added to uriObservableList: " + uri.toString());
                 }

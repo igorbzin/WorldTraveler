@@ -125,6 +125,7 @@
     <string name="error_invalid_pwd">The password is invalid or the user does not have a password.</string>
     <string name="error_invalid_user">There is no user corresponding to this email. </string>
     <string name="error_no_internet_connection">You have no internet connection, please reconnect and try again!</string>
+    <string name="iv_entry_logo_desc">World Traveler logo</string>
 
 
 </resources>

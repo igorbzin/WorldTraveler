@@ -51,7 +51,6 @@ public class RxObservableList<T> extends AbstractList<T> implements List<T>, Obs
     @Override
     public boolean add(T t) {
         boolean added = elements.add(t);
-        Log.d(TAG, "Added bool = " + added);
         if(added) {
             onAdd.onNext(this);
         }
