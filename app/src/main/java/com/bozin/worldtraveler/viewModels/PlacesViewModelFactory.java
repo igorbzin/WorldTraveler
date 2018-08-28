@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.viewModels;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;

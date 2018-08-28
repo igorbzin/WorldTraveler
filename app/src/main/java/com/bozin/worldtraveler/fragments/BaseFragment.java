@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 import android.app.Activity;
 import android.support.v4.app.Fragment;
@@ -6,6 +6,8 @@ import android.view.View;
 
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ProgressBar;
+
+import com.bozin.worldtraveler.R;
 
 import java.util.Objects;
 

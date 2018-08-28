@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler;
+package com.bozin.worldtraveler.fragments;
 
 import android.annotation.SuppressLint;
 import android.content.res.Resources;
@@ -13,6 +13,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.bozin.worldtraveler.MainActivity;
+import com.bozin.worldtraveler.R;
 
 import java.util.Objects;
 
@@ -100,5 +103,6 @@ public class StatisticsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_statistics);
+        ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_statistics);
     }
 }

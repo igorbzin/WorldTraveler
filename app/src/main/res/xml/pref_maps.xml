@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+
+    <Preference
+        android:defaultValue="null"
+        android:key="@string/pref_profile_picture"
+        android:title="@string/pref_profile_picture_txt"
+        android:widgetLayout="@layout/pref_picture_select"/>
+
     <CheckBoxPreference
         android:defaultValue="true"
         android:key="@string/settings_show_countries_key"
@@ -13,6 +20,15 @@
         android:title="@string/settings_show_cities_label"
         />
 
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="@string/pref_search_key"
+        android:title="@string/pref_search_txt"/>
 
+
+    <Preference
+        android:defaultValue="null"
+        android:key="@string/pref_backup_key"
+        android:title="@string/pref_backup_txt"/>
 
 </PreferenceScreen>

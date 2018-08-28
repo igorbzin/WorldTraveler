@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler.Adapters;
+package com.bozin.worldtraveler.adapters;
 
 
 import android.content.Context;
@@ -38,40 +38,43 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
 
     public interface PictureActionHandler {
         void onPictureClick(Uri uri);
-        void onPictureSwipe(int duration);
+
+        void onPictureSwipe(int duration, ArrayList<Uri> arrayList);
     }
 
 
     public void onItemRemove(final RecyclerView.ViewHolder viewHolder, final RecyclerView recyclerView) {
-        synchronized (LOCK){
+        synchronized (LOCK) {
             final int adapterPosition = viewHolder.getAdapterPosition();
-            final Uri mUri = mPicturePaths.get(adapterPosition);
+            Uri mUri = mPicturePaths.get(adapterPosition);
             Snackbar snackbar = Snackbar
-                    .make(recyclerView , R.string.sb_deleted_image, Snackbar.LENGTH_LONG)
+                    .make(recyclerView, R.string.sb_deleted_image, Snackbar.LENGTH_LONG)
                     .setAction("UNDO", view -> {
                         mPicturePaths.add(adapterPosition, mUri);
-                        notifyItemInserted(adapterPosition);
+                        this.notifyItemInserted(adapterPosition);
+                        this.notifyItemRangeInserted(0, mPicturePaths.size());
                         recyclerView.scrollToPosition(adapterPosition);
-                        mPictureActionHandler.onPictureSwipe(300);
+                        mPictureActionHandler.onPictureSwipe(300, mPicturePaths);
                     });
 
-            snackbar.addCallback(new Snackbar.Callback(){
-
+            snackbar.addCallback(new Snackbar.Callback() {
                 @Override
                 public void onDismissed(Snackbar transientBottomBar, int event) {
                     super.onDismissed(transientBottomBar, event);
-                    if(event== Snackbar.Callback.DISMISS_EVENT_TIMEOUT || event == Snackbar.Callback.DISMISS_EVENT_ACTION){
-                        mPictureActionHandler.onPictureSwipe(300);
+                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                        notifyItemRemoved(adapterPosition);
+                        mPictureActionHandler.onPictureSwipe(300, mPicturePaths);
                     }
                 }
             });
+
+            mPicturePaths.remove(adapterPosition);
+
             View snackbar_view = snackbar.getView();
             TextView action_snackbar = snackbar_view.findViewById(android.support.design.R.id.snackbar_action);
             action_snackbar.setTextColor(ContextCompat.getColor(mContext, R.color.yellow));
             snackbar_view.setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorAccent));
             snackbar.show();
-            mPicturePaths.remove(adapterPosition);
-            notifyItemRemoved(adapterPosition);
         }
 
     }
@@ -80,6 +83,7 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
         mPicturePaths = updatedPictures;
         if (updatedPictures != null) {
             this.notifyDataSetChanged();
+            this.notifyItemRangeChanged(0, updatedPictures.size());
         }
     }
 
@@ -103,12 +107,12 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
 
     class ImageViewHolder extends RecyclerView.ViewHolder {
 
-         ImageView selectedPicture;
+        ImageView selectedPicture;
 
 
-         ImageViewHolder(View itemView) {
+        ImageViewHolder(View itemView) {
             super(itemView);
-            selectedPicture =  itemView.findViewById(R.id.rv_item_image);
+            selectedPicture = itemView.findViewById(R.id.rv_item_image);
 
 
             selectedPicture.setOnClickListener(v -> {

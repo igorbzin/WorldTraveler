@@ -8,14 +8,14 @@
     android:orientation="vertical"
     android:padding="20dp">
 
-    <de.hdodenhof.circleimageview.CircleImageView
+    <com.mikhaellopez.circularimageview.CircularImageView
         android:id="@+id/iv_profile_picture"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_marginBottom="4dp"
         android:layout_marginTop="4dp"
         android:src="@drawable/earth_icon"
-        app:civ_border_color="@android:color/white"
+        app:civ_border_color="@color/textWhite"
         app:civ_border_width="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

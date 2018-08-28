@@ -3,16 +3,12 @@ package com.bozin.worldtraveler;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
-
-
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -23,7 +19,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -33,21 +28,23 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.bozin.worldtraveler.data.User;
+import com.bozin.worldtraveler.fragments.LoginFragment;
+import com.bozin.worldtraveler.fragments.MapFragment;
+import com.bozin.worldtraveler.fragments.ProfileFragment;
+import com.bozin.worldtraveler.fragments.SettingsFragment;
+import com.bozin.worldtraveler.fragments.StatisticsFragment;
+import com.bozin.worldtraveler.viewModels.PlacesViewModel;
+import com.bozin.worldtraveler.viewModels.PlacesViewModelFactory;
+import com.bozin.worldtraveler.model.User;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.mikhaellopez.circularimageview.CircularImageView;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-
-
-import de.hdodenhof.circleimageview.CircleImageView;
 
 
 /**
@@ -62,15 +59,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private ActionBarDrawerToggle drawerToggle;
     private NavigationView mNavigationView;
     private FragmentManager mFragmentManager;
-    private ArrayList<Integer> mBackstackItems;
     private int mNumberOfCities;
     private int mNumberOfCountries;
     private String mMapstyle;
-    private int backStackCount;
     private DatabaseReference mdatabaseReference;
     private SharedPreferences sharedPreferences;
-    private PlacesViewModel placesViewModel;
-
 
 
     @Override
@@ -84,10 +77,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         toolbar.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.colorPrimaryDark));
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, R.color.textWhite));
 
-        backStackCount = 0;
+
         PlacesViewModelFactory factory = new PlacesViewModelFactory(getApplication());
-        placesViewModel = ViewModelProviders.of(this, factory).get(PlacesViewModel.class);
-        setupViewModel();
+        PlacesViewModel placesViewModel = ViewModelProviders.of(this, factory).get(PlacesViewModel.class);
 
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
@@ -109,10 +101,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
         mFragmentManager = getSupportFragmentManager();
-        mBackstackItems = new ArrayList<>();
+
 
         mNavigationView = findViewById(R.id.nav_view);
-        mNavigationView.getMenu().getItem(3).setChecked(true);
+
 
         //Add first fragment
         LoginFragment mapFragment = new LoginFragment();
@@ -121,22 +113,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         fragmentTransaction.add(R.id.container, mapFragment)
                 .setReorderingAllowed(true)
                 .commit();
-        mBackstackItems.add(3);
 
-
-        this.getSupportFragmentManager().addOnBackStackChangedListener(
-                () -> {
-                    int currentBackStackCount = mFragmentManager.getBackStackEntryCount();
-
-                    if (currentBackStackCount > backStackCount) {
-                        backStackCount += 1;
-                    } else if (currentBackStackCount < backStackCount && mBackstackItems.size() - 2 >= 0) {
-                        backStackCount -= 1;
-                        int backStackFragment = mBackstackItems.get(mBackstackItems.size() - 2);
-                        mNavigationView.getMenu().getItem(backStackFragment).setChecked(true);
-                        mBackstackItems.remove(mBackstackItems.size() - 1);
-                    }
-                });
 
         createMenu();
         setupSharedPreferences();
@@ -144,39 +121,32 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    private void setupViewModel() {
-        placesViewModel.getPlacesList().observe( this, places -> Log.d(TAG, "Updating list of places from LiveData in ViewModel"));
-    }
-
-
-
     private void createMenu() {
         mNavigationView.setNavigationItemSelectedListener(item ->
         {
-            item.setChecked(true);
             mDrawerLayout.closeDrawers();
 
             int id = item.getItemId();
             switch (id) {
                 case R.id.menu_item_maps:
                     Fragment maps = new MapFragment();
-                    switchFragment(mFragmentManager, maps, getString(R.string.fragment_map), 0);
+                    switchFragment(mFragmentManager, maps, getString(R.string.fragment_map));
                     break;
                 case R.id.menu_item_statistics:
                     Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
-                    switchFragment(mFragmentManager, statistics, getString(R.string.fragment_statistics), 1);
+                    switchFragment(mFragmentManager, statistics, getString(R.string.fragment_statistics));
                     break;
                 case R.id.menu_item_settings:
                     Fragment settings = new SettingsFragment();
-                    switchFragment(mFragmentManager, settings, getString(R.string.fragment_settings), 2);
+                    switchFragment(mFragmentManager, settings, getString(R.string.fragment_settings));
                     break;
                 case R.id.menu_item_login:
                     Fragment login = new LoginFragment();
-                    switchFragment(mFragmentManager, login, getString(R.string.fragment_user), 3);
+                    switchFragment(mFragmentManager, login, getString(R.string.fragment_user));
                     break;
                 default:
                     Fragment defaultMap = new MapFragment();
-                    switchFragment(mFragmentManager, defaultMap, getString(R.string.fragment_map), 0);
+                    switchFragment(mFragmentManager, defaultMap, getString(R.string.fragment_map));
                     break;
             }
             return true;
@@ -186,30 +156,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private void createMenuLoggedIn() {
         mNavigationView.setNavigationItemSelectedListener(item ->
         {
-            item.setChecked(true);
             mDrawerLayout.closeDrawers();
 
             int id = item.getItemId();
             switch (id) {
                 case R.id.menu_item_maps:
                     Fragment maps = new MapFragment();
-                    switchFragment(mFragmentManager, maps, getString(R.string.fragment_map), 0);
+                    switchFragment(mFragmentManager, maps, getString(R.string.fragment_map));
                     break;
                 case R.id.menu_item_statistics:
                     Fragment statistics = StatisticsFragment.newInstance(mNumberOfCities, mNumberOfCountries);
-                    switchFragment(mFragmentManager, statistics, getString(R.string.fragment_statistics), 1);
+                    switchFragment(mFragmentManager, statistics, getString(R.string.fragment_statistics));
                     break;
                 case R.id.menu_item_settings:
                     Fragment settings = new SettingsFragment();
-                    switchFragment(mFragmentManager, settings, getString(R.string.fragment_settings), 2);
+                    switchFragment(mFragmentManager, settings, getString(R.string.fragment_settings));
                     break;
                 case R.id.menu_item_user:
                     Fragment profile = new ProfileFragment();
-                    switchFragment(mFragmentManager, profile, getString(R.string.fragment_user), 3);
+                    switchFragment(mFragmentManager, profile, getString(R.string.fragment_user));
                     break;
                 default:
                     Fragment defaultMap = new MapFragment();
-                    switchFragment(mFragmentManager, defaultMap, getString(R.string.fragment_map), 0);
+                    switchFragment(mFragmentManager, defaultMap, getString(R.string.fragment_map));
                     break;
             }
             return true;
@@ -217,14 +186,30 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName, int navigationPosition) {
+    public void setNavItemChecked(int resId) {
+        Menu m = mNavigationView.getMenu();
+        MenuItem menuItem = m.findItem(resId);
+        if (menuItem != null) {
+            menuItem.setChecked(true);
+        }
+    }
+
+    public void uncheckNavItem(int resId) {
+        Menu m = mNavigationView.getMenu();
+        MenuItem menuItem = m.findItem(resId);
+        if (menuItem != null) {
+            menuItem.setChecked(false);
+        }
+    }
+
+
+    private void switchFragment(@NonNull FragmentManager fragmentManager, @NonNull Fragment mFragment, String fragmentName) {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 .replace(R.id.container, mFragment)
                 .addToBackStack(fragmentName)
                 .setReorderingAllowed(true)
                 .commit();
-        mBackstackItems.add(navigationPosition);
     }
 
     @Override
@@ -370,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             .setReorderingAllowed(true)
                             .commit();
                     return true;
-                }else {
+                } else {
                     return false;
                 }
 
@@ -400,7 +385,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             mNavigationView.removeHeaderView(headerLayout);
             mNavigationView.inflateHeaderView(R.layout.drawer_header_logged_in);
             headerLayout = mNavigationView.getHeaderView(0);
-            CircleImageView profilePicture = headerLayout.findViewById(R.id.iv_profile_picture);
+            CircularImageView profilePicture = headerLayout.findViewById(R.id.iv_profile_picture);
             TextView profile_nameTV = headerLayout.findViewById(R.id.tv_profile_name);
             Uri photoUrl = user.getPhotoUrl();
             if (photoUrl != null && profilePicture != null) {
@@ -413,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
             createMenuLoggedIn();
 
-
+            //Add user to firebase database
             mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
             addUserToDatabase(user);
 
@@ -423,7 +408,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             editor.putInt(getString(R.string.sp_logged_in_status), 1);
             editor.apply();
 
-            mNavigationView.setCheckedItem(R.id.menu_item_user);
+
             Fragment profileFragment = ProfileFragment.newInstance(profile_name);
             FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);

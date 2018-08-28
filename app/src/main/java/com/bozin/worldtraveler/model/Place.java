@@ -1,4 +1,4 @@
-package com.bozin.worldtraveler.data;
+package com.bozin.worldtraveler.model;
 
 
 import android.arch.persistence.room.ColumnInfo;

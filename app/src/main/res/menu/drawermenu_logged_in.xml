@@ -13,15 +13,31 @@
             android:title="@string/menu_item_statistics" />
 
 
-        <item
-            android:id="@id/menu_item_settings"
-            android:icon="@drawable/ic_settings_black_24dp"
-            android:title="@string/menu_item_settings" />
+        <item android:title="@string/menu_item_user">
+            <menu>
+                <item
+                    android:id="@+id/menu_item_user"
+                    android:icon="@drawable/ic_person_black_24dp"
+                    android:checkable="true"
+                    android:title="@string/menu_item_profile" />
 
-        <item
-            android:id="@+id/menu_item_user"
-            android:title="@string/menu_item_user"
-            android:icon="@drawable/ic_person_black_24dp">
+                <item
+                    android:id="@+id/menu_item_friends"
+                    android:checkable="true"
+                    android:icon="@drawable/ic_search_black_24dp"
+                    android:title="@string/menu_item_friends" />
+            </menu>
+        </item>
+
+        <item android:title="@string/menu_item_personalization">
+            <menu>
+                <item
+                    android:id="@+id/menu_item_settings"
+                    android:checkable="true"
+                    android:icon="@drawable/ic_settings_black_24dp"
+                    android:title="@string/menu_item_settings" />
+
+            </menu>
         </item>
 
     </group>

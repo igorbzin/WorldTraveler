@@ -25,7 +25,6 @@ public class IntroActivity extends AppIntro {
         addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_welcome),getText( R.string.ai_welcome_text), R.drawable.color_logo_transparent, white, logo_green, black));
         addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_add_city_title),getText( R.string.ai_add_city_text), R.drawable.screenshot_add_city,white, logo_green, black));
         addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_marker_title), getText(R.string.ai_marker_text), R.drawable.screenshot_marker,white, logo_green, black));
-        //addSlide(AppIntro2Fragment.newInstance(getText(R.string.ai_add_photos_title),getText( R.string.ai_add_photos_text), R.drawable.screenshot_add_phot, white, logo_green, black));
         setColorDoneText(white);
         setColorSkipButton(white);
         setBarColor(logo_green);

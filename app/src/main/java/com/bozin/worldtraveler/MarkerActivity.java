@@ -5,7 +5,6 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.constraint.ConstraintLayout;
@@ -17,17 +16,23 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import com.bozin.worldtraveler.Adapters.PictureRvAdapter;
-import com.bozin.worldtraveler.data.AppDatabase;
-import com.bozin.worldtraveler.data.AppExecutor;
-import com.bozin.worldtraveler.data.Place;
+import com.bozin.worldtraveler.adapters.PictureRvAdapter;
+import com.bozin.worldtraveler.model.RxObservableList;
+import com.bozin.worldtraveler.viewModels.MarkerViewModel;
+import com.bozin.worldtraveler.viewModels.MarkerViewModelFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
 
@@ -37,14 +42,12 @@ import static android.support.v7.widget.DividerItemDecoration.VERTICAL;
 
 public class MarkerActivity extends AppCompatActivity implements PictureRvAdapter.PictureActionHandler {
 
-
-    private ArrayList<Uri> mPictureUris;
+    private final String TAG = "MarkerActivity";
     private RecyclerView mPicturesRV;
     private PictureRvAdapter mAdapter;
-    private int mCurrentMarkerID;
     public final static int PICK_PHOTO_CODE = 11;
     private MarkerViewModel viewModel;
-    private AppDatabase db;
+    private RxObservableList<Uri> uriObservableList;
 
     private ConstraintLayout constraintLayout_start;
     private ConstraintSet constraintSetStart = new ConstraintSet();
@@ -52,13 +55,12 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private ConstraintSet constraintSetSnackbar = new ConstraintSet();
 
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint({"StaticFieldLeak", "CheckResult"})
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         final Intent mIntent = getIntent();
-        mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
-        mPictureUris = new ArrayList<>();
+        int mCurrentMarkerID = mIntent.getIntExtra("MarkerID", 0);
 
         //Inflate layout, set display metrics
         super.onCreate(savedInstanceState);
@@ -79,40 +81,71 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
         constraintSetEnd.clone(this, R.layout.motion01_end_marker_activity);
         constraintSetSnackbar.clone(this, R.layout.motion01_snackbar);
 
+        //Initialize viewmodel
+        MarkerViewModelFactory factory = new MarkerViewModelFactory(getApplication(), mCurrentMarkerID);
+        viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
 
-        new AsyncTask<Integer, Void, Void>() {
-            @Override
-            protected Void doInBackground(Integer... integers) {
-                db = AppDatabase.getInstance(MarkerActivity.this);
-                MarkerViewModelFactory factory = new MarkerViewModelFactory(db, mCurrentMarkerID);
-                viewModel = ViewModelProviders.of(MarkerActivity.this, factory).get(MarkerViewModel.class);
-                return null;
-            }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                mPictureUris = getPicturePaths();
-                if (mAdapter != null) {
-                    mAdapter.updatePictures(mPictureUris);
-                } else {
-                    mAdapter = new PictureRvAdapter(MarkerActivity.this, mPictureUris, MarkerActivity.this);
-                    LinearLayoutManager layoutManager = new LinearLayoutManager(MarkerActivity.this, LinearLayoutManager.VERTICAL, false);
-                    DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
-                    mPicturesRV.addItemDecoration(decoration);
-                    mPicturesRV.setLayoutManager(layoutManager);
-                    mPicturesRV.setAdapter(mAdapter);
+        //Init Adapter
+        mAdapter = new PictureRvAdapter(MarkerActivity.this, new ArrayList<>(), MarkerActivity.this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(MarkerActivity.this, LinearLayoutManager.VERTICAL, false);
+        DividerItemDecoration decoration = new DividerItemDecoration(getApplicationContext(), VERTICAL);
+        mPicturesRV.addItemDecoration(decoration);
+        mPicturesRV.setLayoutManager(layoutManager);
+        mPicturesRV.setAdapter(mAdapter);
+
+
+        viewModel.getPlace()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(place -> viewModel.getPicturePaths(place))
+                .toObservable()
+                .concatMap((Function<ArrayList<Uri>, Observable<RxObservableList<Uri>>>) uriArrayList -> {
+
+                    mAdapter.updatePictures(uriArrayList);
                     beginTransition(constraintSetEnd, 850);
-                }
 
+                    Log.d(TAG, "Adapter pictures updated");
+                    uriObservableList = new RxObservableList<>(uriArrayList);
 
-            }
-        }.execute(mCurrentMarkerID);
+                    return uriObservableList.getObservable()
+                            .observeOn(Schedulers.io())
+                            .doOnNext(uris -> {
+                                Log.d(TAG, "Current List size: " + uris.getList().size());
+                                String pathString = viewModel.makePathString(uris.getList());
+                                viewModel.updatePicturePaths(pathString);
+                                Log.d(TAG, "Updated pictures in database");
+                            });
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<RxObservableList<Uri>>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.d(TAG, "Onsubscribe called");
+                    }
+
+                    @Override
+                    public void onNext(RxObservableList<Uri> uris) {
+                        mAdapter.updatePictures(uris.getList());
+                        Log.d(TAG, "Adapter pictures updated, list size: " + uriObservableList.getList().size());
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.d(TAG, "OnError : " + e);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        Log.d(TAG, "OnComplete called");
+                    }
+                });
 
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder
+                    viewHolder, RecyclerView.ViewHolder target) {
                 return false;
             }
 
@@ -121,13 +154,15 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
             public synchronized void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 beginTransition(constraintSetSnackbar, 300);
                 mAdapter.onItemRemove(viewHolder, mPicturesRV);
+
             }
-
-
         }).attachToRecyclerView(mPicturesRV);
 
+
         Button mBtnAddImage = findViewById(R.id.btn_add_images);
-        mBtnAddImage.setOnClickListener(v -> {
+        mBtnAddImage.setOnClickListener(v ->
+
+        {
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -138,38 +173,25 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     }
 
 
+    @SuppressLint("CheckResult")
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (data != null) {
-            /*if (data.getData() != null) {
-                Uri pictureUri = data.getData();
-                mPictureUris.add(pictureUri);
-            }
-            else {*/
             if (data.getClipData() != null) {
                 ClipData mClipData = data.getClipData();
                 for (int i = 0; i < mClipData.getItemCount(); i++) {
                     ClipData.Item item = mClipData.getItemAt(i);
                     Uri uri = item.getUri();
-                    //getContentResolver().takePersistableUriPermission(uri, flags);
-                    mPictureUris.add(uri);
+                    uriObservableList.add(uri);
+                    Log.d(TAG, "Uri added to uriObservableList: " + uri.toString());
                 }
             }
 
-            mAdapter.updatePictures(mPictureUris);
-            AppExecutor.getInstance().diskIO().execute(() -> updatePicturePaths(makePathString()));
-
         }
     }
 
 
-    private String makePathString() {
-        StringBuilder uriString = new StringBuilder();
-        for (int i = 0; i < mPictureUris.size(); i++) {
-            uriString.append(mPictureUris.get(i).toString()).append(",");
-        }
-        return uriString.toString();
-    }
+
 
     @Override
     public void onPictureClick(Uri uri) {
@@ -181,51 +203,11 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
 
 
     @Override
-    public void onPictureSwipe(int duration) {
+    public void onPictureSwipe(int duration, ArrayList<Uri> uris) {
+        uriObservableList.setList(uris);
         beginTransition(constraintSetEnd, duration);
-    }
-
-    //Get Picture Uris from DB
-    private ArrayList<Uri> getPicturePaths() {
-        Place place = viewModel.getPlace();
-        ArrayList<Uri> picturePathList = new ArrayList<>();
-        String pictureUriString = place.getPicture_uris();
-        if (pictureUriString != null && !pictureUriString.equals("")) {
-            List<String> pathStringsArrayList = Arrays.asList(pictureUriString.split(","));
-            for (int i = 0; i < pathStringsArrayList.size(); i++) {
-                String path = pathStringsArrayList.get(i);
-                picturePathList.add(Uri.parse(path));
-            }
         }
-        return picturePathList;
-    }
 
-
-    //Update picture URIS to make deleting of pictures possible
-    private void updatePicturePaths(String picturePaths) {
-        viewModel.updatePicturePaths(picturePaths);
-    }
-
-
-    @SuppressLint("StaticFieldLeak")
-    @Override
-    protected void onPause() {
-        super.onPause();
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... voids) {
-                updatePicturePaths(makePathString());
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                mAdapter.updatePictures(mPictureUris);
-            }
-        }.execute();
-    }
 
 
     private void beginTransition(ConstraintSet constraintSet, int duration) {
@@ -238,6 +220,7 @@ public class MarkerActivity extends AppCompatActivity implements PictureRvAdapte
     private void delayedFinish() {
         super.finish();
     }
+
 
     @Override
     public void finish() {

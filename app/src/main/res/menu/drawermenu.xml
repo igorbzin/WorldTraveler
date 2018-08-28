@@ -13,15 +13,24 @@
             android:title="@string/menu_item_statistics" />
 
 
-        <item
-            android:id="@+id/menu_item_settings"
-            android:icon="@drawable/ic_settings_black_24dp"
-            android:title="@string/menu_item_settings" />
+        <item android:title="@string/menu_item_user">
+            <menu>
+                <item
+                    android:checkable="true"
+                    android:id="@+id/menu_item_login"
+                    android:icon="@drawable/ic_person_black_24dp"
+                    android:title="@string/login" />
+            </menu>
+        </item>
 
-        <item
-            android:id="@+id/menu_item_login"
-            android:title="Login"
-            android:icon="@drawable/ic_person_black_24dp">
+        <item android:title="@string/menu_item_personalization">
+            <menu>
+                <item
+                    android:id="@+id/menu_item_settings"
+                    android:checkable="true"
+                    android:icon="@drawable/ic_settings_black_24dp"
+                    android:title="@string/menu_item_settings" />
+            </menu>
         </item>
 
     </group>
