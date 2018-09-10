@@ -4,12 +4,12 @@
     android:id="@+id/constraintlayout_marker"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:animateLayoutChanges="true"
+    >
 
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:animateLayoutChanges="false"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="1000dp"

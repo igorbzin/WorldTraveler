@@ -16,6 +16,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -27,10 +28,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import com.bozin.worldtraveler.MainActivity;
 import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.databinding.FragmentUserBinding;
+import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -39,19 +40,21 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
-import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
 
 import java.util.Objects;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableCompletableObserver;
+import io.reactivex.schedulers.Schedulers;
 
 
 public class LoginFragment extends BaseFragment implements
         View.OnClickListener {
 
-    private FirebaseAuth mAuth;
     private EditText etEmail;
     private EditText etPassword;
     private String email;
@@ -61,9 +64,12 @@ public class LoginFragment extends BaseFragment implements
     private FirebaseUser currentUser;
     private onLoggedInHandler mOnLoggedInHandler;
     private AlertDialog loadingDialog;
+    private CompositeDisposable disposable = new CompositeDisposable();
+    private AppCompatActivity mActivity;
 
 
     private static final int RC_SIGN_IN = 9001;
+    private MainViewModel mainViewModel;
 
 
     public static LoginFragment newInstance(int signingOut) {
@@ -75,7 +81,7 @@ public class LoginFragment extends BaseFragment implements
     }
 
     public interface onLoggedInHandler {
-        void onLoginUpdate(FirebaseUser user);
+        void onLoginUpdate();
     }
 
 
@@ -115,10 +121,10 @@ public class LoginFragment extends BaseFragment implements
             editor.apply();
 
             //Switch fragment to map
-            NavigationView navigationView = getActivity().findViewById(R.id.nav_view);
+            NavigationView navigationView = mActivity.findViewById(R.id.nav_view);
             navigationView.getMenu().getItem(0).setChecked(true);
             MapFragment mapFragment = new MapFragment();
-            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
+            FragmentTransaction fragmentTransaction = Objects.requireNonNull(mActivity.getSupportFragmentManager()).beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                     .replace(R.id.container, mapFragment)
                     .addToBackStack(getString(R.string.fragment_user))
@@ -133,7 +139,7 @@ public class LoginFragment extends BaseFragment implements
 
         loginBinding.btnRegister.setOnClickListener(view1 -> {
             RegisterFragment registerFragment = new RegisterFragment();
-            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
+            FragmentTransaction fragmentTransaction = mActivity.getSupportFragmentManager().beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                     .replace(R.id.container, registerFragment)
                     .addToBackStack(getString(R.string.fragment_user))
@@ -145,25 +151,27 @@ public class LoginFragment extends BaseFragment implements
                 return;
             }
             loadingDialog.show();
-
             email = etEmail.getText().toString();
             password = etPassword.getText().toString();
-            mAuth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d(TAG, "signInWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
+
+
+            disposable.add(mainViewModel.signInWithEmail(email, password, getActivity())
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new DisposableCompletableObserver() {
+                        @Override
+                        public void onComplete() {
+                            Log.d(TAG, "OnComplete called");
+                            updateUI(mainViewModel.getFireBaseUser());
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.d(TAG, "OnError called with exception: " + e.toString());
                             loadingDialog.dismiss();
-                            updateUI(user);
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            loadingDialog.dismiss();
-                            try {
-                                throw Objects.requireNonNull(task.getException());
-                            } catch (FirebaseAuthException e) {
-                                Log.w(TAG, "signInWithEmail:failure", task.getException());
-                                String errorCode = e.getErrorCode();
+                            if (e instanceof FirebaseAuthException) {
+                                Log.w(TAG, "signInWithEmail:failure", e);
+                                String errorCode = ((FirebaseAuthException) e).getErrorCode();
                                 switch (errorCode) {
                                     case "ERROR_INVALID_EMAIL":
                                         etEmail.requestFocus();
@@ -180,78 +188,46 @@ public class LoginFragment extends BaseFragment implements
                                     default:
                                         break;
                                 }
-
-                            } catch (FirebaseNetworkException e) {
+                            } else if (e instanceof FirebaseNetworkException) {
                                 Snackbar error = makeSnackBar(getString(R.string.error_no_internet_connection));
                                 hideKeyboard();
                                 error.show();
-                            } catch (Exception e) {
-                                e.printStackTrace();
                             }
                             updateUI(null);
                         }
-                    });
 
+
+                    }));
         });
+
         return view;
     }
 
 
     private Snackbar makeSnackBar(String text) {
-        Snackbar sb_error = Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(R.id.cl_user_fragment), text, Snackbar.LENGTH_LONG);
+        Snackbar sb_error = Snackbar.make(Objects.requireNonNull(mActivity).findViewById(R.id.cl_user_fragment), text, Snackbar.LENGTH_LONG);
         View sb_errorView = sb_error.getView();
         TextView tv_sb_error = sb_errorView.findViewById(android.support.design.R.id.snackbar_text);
         tv_sb_error.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        sb_errorView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorAccent));
+        sb_errorView.setBackgroundColor(ContextCompat.getColor(mActivity, R.color.colorAccent));
         return sb_error;
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Integer signingOut = getArguments() != null ? getArguments().getInt("signing_out") : 0;
-        if (signingOut != 1) {
-            mAuth = FirebaseAuth.getInstance();
-            currentUser = mAuth.getCurrentUser();
-            if (currentUser != null) {
-                currentUser.getUid();
-                currentUser.getMetadata();
-                currentUser.getDisplayName();
-            }
-        }
+        mActivity = (AppCompatActivity) getActivity();
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        mainViewModel = MainViewModel.getViewModel(getActivity());
         try {
             mOnLoggedInHandler = (onLoggedInHandler) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString() + "must implement onLoggedInHandler!");
         }
-    }
-
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        //TODO Create better progressbar
-
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(Objects.requireNonNull(getActivity()), task -> {
-                    if (task.isSuccessful()) {
-                        // Sign in success, update UI with the signed-in user's information
-                        Log.d(TAG, "signInWithCredential:success");
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        loadingDialog.dismiss();
-                        updateUI(user);
-                    } else {
-                        // If sign in fails, display a message to the user.
-                        Log.w(TAG, "signInWithCredential:failure", task.getException());
-                        loadingDialog.dismiss();
-                        Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
-                        updateUI(null);
-                    }
-                });
     }
 
 
@@ -262,9 +238,9 @@ public class LoginFragment extends BaseFragment implements
     private void updateUI(FirebaseUser firebaseUser) {
         currentUser = firebaseUser;
         if (firebaseUser != null) {
-            mOnLoggedInHandler.onLoginUpdate(firebaseUser);
+            mOnLoggedInHandler.onLoginUpdate();
         } else {
-            NavigationView mNavigationView = Objects.requireNonNull(getActivity()).findViewById(R.id.nav_view);
+            NavigationView mNavigationView = Objects.requireNonNull(mActivity).findViewById(R.id.nav_view);
             mNavigationView.getMenu().clear();
             mNavigationView.inflateMenu(R.menu.drawermenu);
             View headerLayout = mNavigationView.getHeaderView(0);
@@ -279,20 +255,33 @@ public class LoginFragment extends BaseFragment implements
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 // Google Sign In was successful, authenticate with Firebase
+                // [END_EXCLUDE]
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                firebaseAuthWithGoogle(account);
+                disposable.add(mainViewModel.firebaseAuthWithGoogle(account, getActivity())
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(new DisposableCompletableObserver() {
+                            @Override
+                            public void onComplete() {
+                                loadingDialog.dismiss();
+                                updateUI(mainViewModel.getFireBaseUser());
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                loadingDialog.dismiss();
+                                Log.d(TAG, "Error signing in with Google: " + e.toString());
+                            }
+                        }));
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
                 Log.w(TAG, "Google sign in failed", e);
-                // [START_EXCLUDE]
-                Toast.makeText(getActivity(), e.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(mActivity, e.toString(), Toast.LENGTH_LONG).show();
                 updateUI(null);
-                // [END_EXCLUDE]
             }
         }
     }
@@ -336,12 +325,9 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        mAuth = FirebaseAuth.getInstance();
-        currentUser = mAuth.getCurrentUser();
-        updateUI(currentUser);
-        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
-        if(currentUser == null){
-            ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_login);
+        Objects.requireNonNull(mActivity).setTitle(R.string.fragment_user);
+        if (currentUser == null) {
+            ((MainActivity) Objects.requireNonNull(mActivity)).setNavItemChecked(R.id.menu_item_login);
         }
 
     }
@@ -349,9 +335,9 @@ public class LoginFragment extends BaseFragment implements
     @SuppressLint("InflateParams")
     public void onCreateDialogFragment() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(mActivity));
         // Get the layout inflater
-        LayoutInflater inflater = getActivity().getLayoutInflater();
+        LayoutInflater inflater = mActivity.getLayoutInflater();
 
 
         // Inflate and set the layout for the dialog
@@ -370,7 +356,7 @@ public class LoginFragment extends BaseFragment implements
             EditText email = ((AlertDialog) dialog).findViewById(R.id.et_pwd_reset_mail);
             String sEmail = Objects.requireNonNull(email).getText().toString();
             if (!sEmail.isEmpty()) {
-                mAuth.sendPasswordResetEmail(sEmail);
+                mainViewModel.resetPassword(sEmail);
                 dialog.dismiss();
             } else {
                 email.setError("Can't be empty!");
@@ -396,7 +382,8 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onPause() {
         super.onPause();
-        if(currentUser == null){
+        disposable.clear();
+        if (currentUser == null) {
             ((MainActivity) Objects.requireNonNull(getActivity())).uncheckNavItem(R.id.menu_item_login);
         }
     }

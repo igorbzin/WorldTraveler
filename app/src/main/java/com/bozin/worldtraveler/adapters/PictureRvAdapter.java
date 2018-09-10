@@ -52,7 +52,6 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
                     .setAction("UNDO", view -> {
                         mPicturePaths.add(adapterPosition, mUri);
                         this.notifyItemInserted(adapterPosition);
-                        this.notifyItemRangeInserted(0, mPicturePaths.size());
                         recyclerView.scrollToPosition(adapterPosition);
                         mPictureActionHandler.onPictureSwipe(300, mPicturePaths);
                     });
@@ -61,7 +60,7 @@ public class PictureRvAdapter extends RecyclerView.Adapter<PictureRvAdapter.Imag
                 @Override
                 public void onDismissed(Snackbar transientBottomBar, int event) {
                     super.onDismissed(transientBottomBar, event);
-                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION ) {
                         notifyItemRemoved(adapterPosition);
                         mPictureActionHandler.onPictureSwipe(300, mPicturePaths);
                     }

@@ -1,7 +1,6 @@
 package com.bozin.worldtraveler.fragments;
 
 
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,7 +24,9 @@ import com.bozin.worldtraveler.MainActivity;
 import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.data.AppExecutor;
 import com.bozin.worldtraveler.databinding.FragmentProfileBinding;
-import com.bozin.worldtraveler.viewModels.PlacesViewModel;
+import com.bozin.worldtraveler.model.Place;
+import com.bozin.worldtraveler.model.User;
+import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -34,12 +35,12 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -49,21 +50,13 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private final String TAG = "ProfileFragment";
     private GoogleMap mMap;
     private SupportMapFragment supportMapFragment;
-    private PlacesViewModel viewModel;
-    private LinkedHashMap<Integer, String> mCountriesVisited;
+    private MainViewModel viewModel;
     private FragmentProfileBinding profileBinding;
-
+    private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
+    private User currentUser;
 
     public interface onSignedOutHandler {
         void onSignedOut();
-    }
-
-    public static ProfileFragment newInstance(String userName) {
-        ProfileFragment profileFragment = new ProfileFragment();
-        Bundle args = new Bundle();
-        args.putString("user_name", userName);
-        profileFragment.setArguments(args);
-        return profileFragment;
     }
 
 
@@ -72,16 +65,11 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         profileBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
         GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
-        mCountriesVisited = new LinkedHashMap<>();
 
-        try {
-            String userName = (String) Objects.requireNonNull(getArguments()).get("user_name");
-            profileBinding.textView2.setText(userName);
-        } catch (Exception e) {
-            e.printStackTrace();
-            FirebaseAuth mAuth = FirebaseAuth.getInstance();
-            profileBinding.textView2.setText(Objects.requireNonNull(mAuth.getCurrentUser()).getDisplayName());
-        }
+
+        viewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
+
+        profileBinding.textView2.setText("IGOR BOZIN");
 
         if (supportMapFragment == null) {
             supportMapFragment = SupportMapFragment.newInstance(options);
@@ -96,7 +84,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
     }
 
 
@@ -110,7 +97,8 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        setupViewModel();
+
+        showMarkers();
 
         //Style the map
 
@@ -141,22 +129,21 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    private void setupViewModel() {
-        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
+    private void showMarkers() {
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-            viewModel.createMarkersFromPlaces(places, 1, getContext());
-            LinkedHashMap<Integer,MarkerOptions> markerHashMap = viewModel.getPlacesHashMap();
+            markerHashMap = viewModel.getPlacesHashMap(places, 1, getContext());
             AppExecutor.getInstance().mainThread().execute(() -> setMarkers(markerHashMap));
             updateStatisticNumbers();
-    });
-}
+
+        });
+    }
+    
 
     private String getMapStyle() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         return sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
     }
-
 
 
     private void setMarkers(LinkedHashMap<Integer, MarkerOptions> hashMap) {
@@ -167,7 +154,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
             mMap.addMarker(option);
         }
     }
-
 
 
     public void snapShot() {
@@ -218,13 +204,12 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     }
 
     public void createPolicyRules() {
-
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
     }
 
     public void updateStatisticNumbers() {
-        int citiesVisited = viewModel.getPlacesHashMap().size();
+        int citiesVisited = markerHashMap.size();
         int countriesVisited = viewModel.getCountriesVisited().size();
         profileBinding.tvProfileNumberOfCitiesVisited.setText(String.valueOf(citiesVisited));
         profileBinding.tvProfileNumberOfCountriesVisited.setText(String.valueOf(countriesVisited));

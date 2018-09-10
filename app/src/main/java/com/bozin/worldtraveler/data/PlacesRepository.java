@@ -27,7 +27,6 @@ public class PlacesRepository {
         return mPlacesList;
     }
 
-
     public Single<Place> getPlace(int id) {
         return mPlacesDao.loadPlaceById(id);
     }

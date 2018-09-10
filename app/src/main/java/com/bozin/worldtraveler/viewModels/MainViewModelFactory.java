@@ -6,7 +6,7 @@ import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProvider;
 import android.support.annotation.NonNull;
 
-public class PlacesViewModelFactory extends ViewModelProvider.AndroidViewModelFactory {
+public class MainViewModelFactory extends ViewModelProvider.AndroidViewModelFactory {
     /**
      * Creates a {@code AndroidViewModelFactory}
      *
@@ -17,7 +17,7 @@ public class PlacesViewModelFactory extends ViewModelProvider.AndroidViewModelFa
     private Application application;
 
 
-    public PlacesViewModelFactory(@NonNull Application application) {
+    public MainViewModelFactory(@NonNull Application application) {
         super(application);
         this.application = application;
     }
@@ -25,7 +25,7 @@ public class PlacesViewModelFactory extends ViewModelProvider.AndroidViewModelFa
     @NonNull
     @Override
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-        return (T) new PlacesViewModel(application);
+        return (T) new MainViewModel(application);
     }
 
 

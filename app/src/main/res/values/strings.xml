@@ -10,11 +10,15 @@
     <string name="ai_welcome_text">Track the cities you\'ve visited and add photos of your journeys. You will be able to see the number of cities visited in the "Statistics" section on the left. </string>
     <string name="ai_add_city_title">Add city</string>
     <string name="ai_add_city_text">Simply click on the green "add" button in the lower right corner and then search for any city in the menu. You will need an internet connection for this. </string>
+    <string name="ai_delete_city_title">Delete a city</string>
+    <string name="ai_delete_city_text">You can remove accidentally added cities by dragging their marker to the bottom of the map</string>
     <string name="ai_marker_title">Add and view photos</string>
     <string name="ai_marker_text">After you add a city, you can add or delete photos by clicking on the photo icon above it.</string>
     <string name="ai_add_photos_title">Adding and deleting photos</string>
-    <string name="ai_add_photos_text">After this, you can add or delete photos from your phone.</string>
-
+    <string name="ai_add_photos_text">You cann add pictures by pressing on each markers pop-up window, which appears on pressing the marker. After this, you can add or delete photos from your phone.</string>
+    <string name="ai_iv_entry_logo_desc">World Traveler logo</string>
+    <string name="ai_tv_tutorial_skip">SKIP</string>
+    <string name="ai_tv_tutorial_done">DONE</string>
 
 
     <!--MainActivity-->
@@ -82,7 +86,7 @@
     <string name="tv_login_pwd_forgotten">Forgot your password?</string>
     <string name="tv_login_email">E-Mail</string>
     <string name="tv_login_password">Password</string>
-    <string name="tv_no_user_account">No user account? Register now!</string>
+    <string name="tv_no_user_account">No currentUser account? Register now!</string>
     <string name="btn_login">Sign in</string>
     <string name="btn_user_register">Register</string>
     <string name="sb_login_successfull">Successful login!</string>
@@ -122,10 +126,10 @@
     <string name="error_email_exists">The email address is already in use by another account.</string>
 
     <string name="error_invalid_email">The email address is badly formatted.</string>
-    <string name="error_invalid_pwd">The password is invalid or the user does not have a password.</string>
-    <string name="error_invalid_user">There is no user corresponding to this email. </string>
+    <string name="error_invalid_pwd">The password is invalid.</string>
+    <string name="error_invalid_user">There is no currentUser corresponding to this email. </string>
     <string name="error_no_internet_connection">You have no internet connection, please reconnect and try again!</string>
-    <string name="iv_entry_logo_desc">World Traveler logo</string>
+
 
 
 </resources>

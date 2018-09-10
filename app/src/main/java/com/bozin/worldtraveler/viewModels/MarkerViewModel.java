@@ -18,16 +18,15 @@ public class MarkerViewModel extends AndroidViewModel {
 
     private PlacesRepository mPlacesRepository;
     private Single<Place> place;
-    private Application application;
     private ArrayList<Uri> uriArrayList;
-
     private int markerId;
+
+
 
 
     public MarkerViewModel(Application application, int markerId) {
         super(application);
         mPlacesRepository = new PlacesRepository(application);
-        this.application = application;
         this.markerId = markerId;
         this.uriArrayList = new ArrayList<>();
     }
@@ -56,10 +55,6 @@ public class MarkerViewModel extends AndroidViewModel {
             }
         }
         uriArrayList = picturePathList;
-        return uriArrayList;
-    }
-
-    public ArrayList<Uri> getUriArrayList() {
         return uriArrayList;
     }
 

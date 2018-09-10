@@ -3,7 +3,6 @@ package com.bozin.worldtraveler.fragments;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -35,7 +34,7 @@ import com.bozin.worldtraveler.MarkerActivity;
 import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.adapters.CustomInfoWindowAdapter;
 import com.bozin.worldtraveler.data.AppExecutor;
-import com.bozin.worldtraveler.viewModels.PlacesViewModel;
+import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -78,7 +77,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
     private Animation mStartFadeOutAnimation;
     private int mCameraPosition;
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
-    private PlacesViewModel viewModel;
+    private MainViewModel viewModel;
     private MotionLayout motionLayout;
 
     private final int REQUEST_CODE_SEARCH_ACTIVITY = 1;
@@ -194,11 +193,10 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     private void setupViewModel() {
-        viewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(PlacesViewModel.class);
+        viewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
         viewModel.getPlacesList().observe(this, places -> {
             Log.d(TAG, "Updating list of places from LiveData in ViewModel");
-            viewModel.createMarkersFromPlaces(places);
-            markerHashMap = viewModel.getPlacesHashMap();
+            markerHashMap = viewModel.getPlacesHashMap(places);
             AppExecutor.getInstance().mainThread().execute(() -> setMarkers(markerHashMap));
             updateStatisticNumbers();
         });
@@ -300,7 +298,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
                 //Check if selected place was already added
 
-                ArrayList<MarkerOptions> places = new ArrayList<>(viewModel.getPlacesHashMap().values());
+                ArrayList<MarkerOptions> places = new ArrayList<>(markerHashMap.values());
 
                 if (places.size() != 0) {
                     for (MarkerOptions markerOptions: places) {
@@ -401,7 +399,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
                         updateStatisticNumbers();
                     });
                 } else {
-                    setMarkers(viewModel.getPlacesHashMap());
+                    setMarkers(markerHashMap);
                 }
 
 
@@ -466,7 +464,7 @@ public class MapFragment extends android.support.v4.app.Fragment implements OnMa
 
 
     public void updateStatisticNumbers() {
-        int numberofCities = viewModel.getPlacesHashMap().size();
+        int numberofCities = markerHashMap.size();
         int numberOfCountries = viewModel.getCountriesVisited().size();
         mCallback.statisticsUpdate(numberofCities, numberOfCountries);
     }

@@ -75,7 +75,6 @@ public class RxObservableList<T> extends AbstractList<T> implements List<T>, Obs
 
     @Override
     public T remove(int index) {
-        List<T> test = elements;
         T t = elements.remove(index);
         onAdd.onNext(this);
         return t;

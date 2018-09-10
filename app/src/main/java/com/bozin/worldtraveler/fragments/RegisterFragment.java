@@ -73,7 +73,7 @@ public class RegisterFragment extends Fragment {
                                         .addOnCompleteListener(task1 -> {
                                             if (task1.isSuccessful()) {
                                                 Log.d("USER CREATED", "User profile updated.");
-                                                Objects.requireNonNull(mLoginHandler).onLoginUpdate(user);
+                                                Objects.requireNonNull(mLoginHandler).onLoginUpdate();
                                             }
                                         });
 

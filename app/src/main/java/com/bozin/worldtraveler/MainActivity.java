@@ -1,7 +1,6 @@
 package com.bozin.worldtraveler;
 
 
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -33,12 +32,8 @@ import com.bozin.worldtraveler.fragments.MapFragment;
 import com.bozin.worldtraveler.fragments.ProfileFragment;
 import com.bozin.worldtraveler.fragments.SettingsFragment;
 import com.bozin.worldtraveler.fragments.StatisticsFragment;
-import com.bozin.worldtraveler.viewModels.PlacesViewModel;
-import com.bozin.worldtraveler.viewModels.PlacesViewModelFactory;
-import com.bozin.worldtraveler.model.User;
+import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.mikhaellopez.circularimageview.CircularImageView;
 import com.squareup.picasso.Picasso;
 
@@ -47,9 +42,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-/**
- * A styled map using JSON styles from a raw resource.
- */
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
         MapFragment.MapFragmentStatisticsListener, LoginFragment.onLoggedInHandler, ProfileFragment.onSignedOutHandler {
 
@@ -62,8 +54,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private int mNumberOfCities;
     private int mNumberOfCountries;
     private String mMapstyle;
-    private DatabaseReference mdatabaseReference;
     private SharedPreferences sharedPreferences;
+    private MainViewModel viewModel;
 
 
     @Override
@@ -78,9 +70,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         toolbar.setTitleTextColor(ContextCompat.getColor(MainActivity.this, R.color.textWhite));
 
 
-        PlacesViewModelFactory factory = new PlacesViewModelFactory(getApplication());
-        PlacesViewModel placesViewModel = ViewModelProviders.of(this, factory).get(PlacesViewModel.class);
-
+        //Set up viewmodel
+        viewModel = MainViewModel.getViewModel(this);
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
@@ -212,10 +203,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .commit();
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-    }
+
 
     @Override
     public void statisticsUpdate(int numberOfCities, int numberOfCountries) {
@@ -377,8 +365,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     @Override
-    public void onLoginUpdate(FirebaseUser user) {
-        if (user != null) {
+    public void onLoginUpdate() {
+        FirebaseUser currentUser = viewModel.getFireBaseUser();
+        if (currentUser != null) {
             mNavigationView.getMenu().clear();
             mNavigationView.inflateMenu(R.menu.drawermenu_logged_in);
             View headerLayout = mNavigationView.getHeaderView(0);
@@ -387,11 +376,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             headerLayout = mNavigationView.getHeaderView(0);
             CircularImageView profilePicture = headerLayout.findViewById(R.id.iv_profile_picture);
             TextView profile_nameTV = headerLayout.findViewById(R.id.tv_profile_name);
-            Uri photoUrl = user.getPhotoUrl();
+            Uri photoUrl = currentUser.getPhotoUrl();
             if (photoUrl != null && profilePicture != null) {
                 Picasso.get().load(photoUrl).into(profilePicture);
+            } else {
+                Picasso.get().load(R.drawable.earth_icon).into(profilePicture);
             }
-            String profile_name = user.getDisplayName();
+            String profile_name = currentUser.getDisplayName();
 
             if (profile_name != null && profile_nameTV != null) {
                 profile_nameTV.setText(profile_name);
@@ -399,8 +390,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             createMenuLoggedIn();
 
             //Add user to firebase database
-            mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
-            addUserToDatabase(user);
+            viewModel.addUserToDatabase();
+            Log.d(TAG, "User added to online database");
 
             //Update actionbar menu
             updateOptionsMenu();
@@ -409,7 +400,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             editor.apply();
 
 
-            Fragment profileFragment = ProfileFragment.newInstance(profile_name);
+            Fragment profileFragment = new ProfileFragment();
             FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
             fragmentTransaction.replace(R.id.container, profileFragment)
@@ -437,9 +428,4 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    private void addUserToDatabase(FirebaseUser currentUser) {
-        String id = currentUser.getUid();
-        User user = new User(id, currentUser.getDisplayName(), "", "");
-        mdatabaseReference.child(id).setValue(user);
-    }
 }
