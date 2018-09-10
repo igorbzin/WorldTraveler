@@ -138,7 +138,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
         });
     }
-    
+
 
     private String getMapStyle() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
