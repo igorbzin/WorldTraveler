@@ -26,9 +26,14 @@
         android:title="@string/pref_search_txt"/>
 
 
+    <!-- TODO Implement backup
+
     <Preference
         android:defaultValue="null"
         android:key="@string/pref_backup_key"
         android:title="@string/pref_backup_txt"/>
+    -->
+
+
 
 </PreferenceScreen>

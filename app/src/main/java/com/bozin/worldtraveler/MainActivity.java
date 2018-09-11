@@ -1,7 +1,6 @@
 package com.bozin.worldtraveler;
 
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,10 +35,6 @@ import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.firebase.auth.FirebaseUser;
 import com.mikhaellopez.circularimageview.CircularImageView;
 import com.squareup.picasso.Picasso;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
@@ -108,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         createMenu();
         setupSharedPreferences();
-        mMapstyle = setMapStyle();
+        mMapstyle = viewModel.setMapStyle(this);
     }
 
 
@@ -204,38 +199,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-
     @Override
     public void statisticsUpdate(int numberOfCities, int numberOfCountries) {
         mNumberOfCities = numberOfCities;
         mNumberOfCountries = numberOfCountries;
-    }
-
-
-    private String setMapStyle() {
-        sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        boolean mShowCityNames = sharedPreferences.getBoolean(getString(R.string.settings_show_cities_key), false);
-        boolean mShowCountryNames = sharedPreferences.getBoolean(getString(R.string.settings_show_countries_key), true);
-
-        String mapStyle = sharedPreferences.getString(getString(R.string.sp_mapstyle_key), "0");
-        JSONArray jsonArray = null;
-        try {
-            jsonArray = new JSONArray(mapStyle);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        if (jsonArray != null) {
-            jsonArray = setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
-            jsonArray = setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(getString(R.string.sp_mapstyle_key), jsonArray.toString());
-            editor.putBoolean(getString(R.string.settings_show_cities_key), mShowCityNames);
-            editor.putBoolean(getString(R.string.settings_show_countries_key), mShowCountryNames);
-            editor.apply();
-            return jsonArray.toString();
-        } else {
-            return null;
-        }
     }
 
 
@@ -248,48 +215,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equals(getString(R.string.settings_show_countries_key))) {
-            setMapStyle();
+            viewModel.setMapStyle(this);
         } else if (key.equals(getString(R.string.settings_show_cities_key))) {
-            setMapStyle();
+            viewModel.setMapStyle(this);
+        } else if (key.equals(getString(R.string.pref_search_key))) {
+            viewModel.updateDbUserData(this);
         }
 
-    }
-
-
-    private JSONArray setPreferenceValue(JSONArray jsonArray, String preference, boolean visibility) {
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = null;
-            try {
-                jsonObject = new JSONObject(jsonArray.get(i).toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            try {
-                if (jsonObject != null && jsonObject.has("featureType")) {
-                    if (jsonObject.get("featureType").equals(preference)) {
-                        JSONArray stylers = jsonObject.getJSONArray("stylers");
-                        JSONObject secondJSONObject;
-                        for (int j = 0; j < stylers.length(); j++) {
-                            secondJSONObject = new JSONObject(stylers.get(j).toString());
-                            if (!visibility) {
-                                secondJSONObject.put("visibility", "off");
-                            } else {
-                                secondJSONObject.put("visibility", "on");
-                            }
-                            stylers.put(j, secondJSONObject);
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            try {
-                jsonArray.put(i, jsonObject);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-        return jsonArray;
     }
 
 
@@ -424,6 +356,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .commit();
         createMenu();
         loginFragment.signOut();
+        Log.d(TAG, "USER SIGNED OUT");
 
     }
 

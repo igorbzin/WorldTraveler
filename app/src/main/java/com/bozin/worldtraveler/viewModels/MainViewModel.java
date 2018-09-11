@@ -7,6 +7,7 @@ import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -32,13 +33,15 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
 import io.reactivex.Completable;
-import io.reactivex.CompletableEmitter;
-import io.reactivex.CompletableOnSubscribe;
 
 
 public class MainViewModel extends AndroidViewModel {
@@ -47,9 +50,9 @@ public class MainViewModel extends AndroidViewModel {
     private LiveData<List<Place>> placesList;
     private LinkedHashMap<Integer, String> countriesVisited;
     private LinkedHashMap<Integer, MarkerOptions> placesHashMap;
-    private FirebaseAuth mAuth;
-
+    private FirebaseAuth mAuth ;
     private FirebaseUser mFireBaseUser;
+    private DatabaseReference mDatabaseReference;
 
 
     public MainViewModel(@NonNull Application application) {
@@ -58,7 +61,7 @@ public class MainViewModel extends AndroidViewModel {
         placesList = mPlacesRepository.getAllPlaces();
         countriesVisited = new LinkedHashMap<>();
         placesHashMap = new LinkedHashMap<>();
-        mAuth = FirebaseAuth.getInstance();
+        mDatabaseReference = FirebaseDatabase.getInstance().getReference("users");
     }
 
     public LiveData<List<Place>> getPlacesList() {
@@ -70,13 +73,6 @@ public class MainViewModel extends AndroidViewModel {
 
     }
 
-    public List<Place> getPlaces() {
-        if (placesList != null) {
-            return placesList.getValue();
-        } else {
-            return mPlacesRepository.getAllPlaces().getValue();
-        }
-    }
 
     public void insertPlace(Place place) {
         mPlacesRepository.insertPlace(place);
@@ -93,8 +89,8 @@ public class MainViewModel extends AndroidViewModel {
 
 
     //NEED TO CALL THIS FIRST TO INIT PLACES HASHMAP
-    public void createMarkersFromPlaces(List<Place> list, Object... objects) {
-        if(list != null){
+    private void createMarkersFromPlaces(List<Place> list, Object... objects) {
+        if (list != null) {
             for (Place place : list) {
 
                 String city = place.getCity_name();
@@ -130,6 +126,10 @@ public class MainViewModel extends AndroidViewModel {
                 placesHashMap.put(place.getPlaceID(), markerOptions);
             }
         }
+    }
+
+    public void setFirebaseAuth(FirebaseAuth auth){
+        mAuth = auth;
     }
 
 
@@ -171,6 +171,10 @@ public class MainViewModel extends AndroidViewModel {
         return mFireBaseUser;
     }
 
+    public void setFireBaseUser(FirebaseUser fireBaseUser){
+        mFireBaseUser = fireBaseUser;
+    }
+
 
     public Completable signInWithEmail(String email, String password, Activity activity) {
         return Completable.create(emitter -> mAuth.signInWithEmailAndPassword(email, password)
@@ -187,25 +191,22 @@ public class MainViewModel extends AndroidViewModel {
 
 
     public Completable firebaseAuthWithGoogle(GoogleSignInAccount acct, Activity activity) {
-        return Completable.create(new CompletableOnSubscribe() {
-            @Override
-            public void subscribe(CompletableEmitter emitter) throws Exception {
-                Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-                AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-                mAuth.signInWithCredential(credential)
-                        .addOnCompleteListener(Objects.requireNonNull(activity), task -> {
-                            if (task.isSuccessful()) {
-                                // Sign in success, update UI with the signed-in currentUser's information
-                                Log.d(TAG, "signInWithCredential:success");
-                                mFireBaseUser = mAuth.getCurrentUser();
-                                emitter.onComplete();
-                            } else {
-                                // If sign in fails, display a message to the currentUser.
-                                Log.w(TAG, "signInWithCredential:failure", task.getException());
-                                emitter.onError(task.getException());
-                            }
-                        });
-            }
+        return Completable.create(emitter -> {
+            Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
+            AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+            mAuth.signInWithCredential(credential)
+                    .addOnCompleteListener(Objects.requireNonNull(activity), task -> {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in currentUser's information
+                            Log.d(TAG, "signInWithCredential:success");
+                            mFireBaseUser = mAuth.getCurrentUser();
+                            emitter.onComplete();
+                        } else {
+                            // If sign in fails, display a message to the currentUser.
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                            emitter.onError(task.getException());
+                        }
+                    });
         });
 
     }
@@ -216,12 +217,90 @@ public class MainViewModel extends AndroidViewModel {
 
     public void addUserToDatabase() {
         //Add currentUser to firebase database
-        DatabaseReference mdatabaseReference = FirebaseDatabase.getInstance().getReference("users");
         String _uuid = mFireBaseUser.getUid();
         String _uname = mFireBaseUser.getDisplayName();
-        String _upicture = mFireBaseUser.getPhotoUrl().toString();
+        String _upicture = "";
+        if (mFireBaseUser.getPhotoUrl() != null) {
+          _upicture = Objects.requireNonNull(mFireBaseUser.getPhotoUrl()).toString();
+        }
         User currentUser = new User(_uuid, _uname, _upicture, "");
-        mdatabaseReference.child(_uuid).setValue(currentUser);
+        mDatabaseReference.child(_uuid).setValue(currentUser);
+    }
+
+
+    public void updateDbUserData(Context context){
+        SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        boolean visibility = sharedPreferences.getBoolean(context.getString(R.string.pref_search_key), false);
+        int visible = visibility ? 1 : 0;
+        try {
+            mDatabaseReference.child(mFireBaseUser.getUid()).child("visibility").setValue(visible);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public String setMapStyle(Context context) {
+        SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        boolean mShowCityNames = sharedPreferences.getBoolean(context.getString(R.string.settings_show_cities_key), false);
+        boolean mShowCountryNames = sharedPreferences.getBoolean(context.getString(R.string.settings_show_countries_key), true);
+
+        String mapStyle = sharedPreferences.getString(context.getString(R.string.sp_mapstyle_key), "0");
+        JSONArray jsonArray = null;
+        try {
+            jsonArray = new JSONArray(mapStyle);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (jsonArray != null) {
+            jsonArray = setPreferenceValue(jsonArray, "administrative.country", mShowCountryNames);
+            jsonArray = setPreferenceValue(jsonArray, "administrative.locality", mShowCityNames);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(context.getString(R.string.sp_mapstyle_key), jsonArray.toString());
+            editor.putBoolean(context.getString(R.string.settings_show_cities_key), mShowCityNames);
+            editor.putBoolean(context.getString(R.string.settings_show_countries_key), mShowCountryNames);
+            editor.apply();
+            return jsonArray.toString();
+        } else {
+            return null;
+        }
+    }
+
+
+    private JSONArray setPreferenceValue(JSONArray jsonArray, String preference, boolean visibility) {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonObject = null;
+            try {
+                jsonObject = new JSONObject(jsonArray.get(i).toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (jsonObject != null && jsonObject.has("featureType")) {
+                    if (jsonObject.get("featureType").equals(preference)) {
+                        JSONArray stylers = jsonObject.getJSONArray("stylers");
+                        JSONObject secondJSONObject;
+                        for (int j = 0; j < stylers.length(); j++) {
+                            secondJSONObject = new JSONObject(stylers.get(j).toString());
+                            if (!visibility) {
+                                secondJSONObject.put("visibility", "off");
+                            } else {
+                                secondJSONObject.put("visibility", "on");
+                            }
+                            stylers.put(j, secondJSONObject);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            try {
+                jsonArray.put(i, jsonObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return jsonArray;
     }
 
 

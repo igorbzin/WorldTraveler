@@ -16,7 +16,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -61,11 +60,11 @@ public class LoginFragment extends BaseFragment implements
     private String password;
     private final String TAG = "LOGIN_PROCESS";
     private GoogleSignInClient mGoogleSignInClient;
-    private FirebaseUser currentUser;
     private onLoggedInHandler mOnLoggedInHandler;
     private AlertDialog loadingDialog;
     private CompositeDisposable disposable = new CompositeDisposable();
-    private AppCompatActivity mActivity;
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
 
 
     private static final int RC_SIGN_IN = 9001;
@@ -121,10 +120,10 @@ public class LoginFragment extends BaseFragment implements
             editor.apply();
 
             //Switch fragment to map
-            NavigationView navigationView = mActivity.findViewById(R.id.nav_view);
+            NavigationView navigationView = getActivity().findViewById(R.id.nav_view);
             navigationView.getMenu().getItem(0).setChecked(true);
             MapFragment mapFragment = new MapFragment();
-            FragmentTransaction fragmentTransaction = Objects.requireNonNull(mActivity.getSupportFragmentManager()).beginTransaction();
+            FragmentTransaction fragmentTransaction = Objects.requireNonNull(getActivity().getSupportFragmentManager()).beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                     .replace(R.id.container, mapFragment)
                     .addToBackStack(getString(R.string.fragment_user))
@@ -139,7 +138,7 @@ public class LoginFragment extends BaseFragment implements
 
         loginBinding.btnRegister.setOnClickListener(view1 -> {
             RegisterFragment registerFragment = new RegisterFragment();
-            FragmentTransaction fragmentTransaction = mActivity.getSupportFragmentManager().beginTransaction();
+            FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
             fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                     .replace(R.id.container, registerFragment)
                     .addToBackStack(getString(R.string.fragment_user))
@@ -162,6 +161,7 @@ public class LoginFragment extends BaseFragment implements
                         @Override
                         public void onComplete() {
                             Log.d(TAG, "OnComplete called");
+                            loadingDialog.dismiss();
                             updateUI(mainViewModel.getFireBaseUser());
                         }
 
@@ -205,24 +205,23 @@ public class LoginFragment extends BaseFragment implements
 
 
     private Snackbar makeSnackBar(String text) {
-        Snackbar sb_error = Snackbar.make(Objects.requireNonNull(mActivity).findViewById(R.id.cl_user_fragment), text, Snackbar.LENGTH_LONG);
+        Snackbar sb_error = Snackbar.make(Objects.requireNonNull(getActivity()).findViewById(R.id.cl_user_fragment), text, Snackbar.LENGTH_LONG);
         View sb_errorView = sb_error.getView();
         TextView tv_sb_error = sb_errorView.findViewById(android.support.design.R.id.snackbar_text);
         tv_sb_error.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        sb_errorView.setBackgroundColor(ContextCompat.getColor(mActivity, R.color.colorAccent));
+        sb_errorView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorAccent));
         return sb_error;
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        mActivity = (AppCompatActivity) getActivity();
+        mainViewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mainViewModel = MainViewModel.getViewModel(getActivity());
         try {
             mOnLoggedInHandler = (onLoggedInHandler) context;
         } catch (ClassCastException e) {
@@ -236,11 +235,10 @@ public class LoginFragment extends BaseFragment implements
     }
 
     private void updateUI(FirebaseUser firebaseUser) {
-        currentUser = firebaseUser;
         if (firebaseUser != null) {
             mOnLoggedInHandler.onLoginUpdate();
         } else {
-            NavigationView mNavigationView = Objects.requireNonNull(mActivity).findViewById(R.id.nav_view);
+            NavigationView mNavigationView = Objects.requireNonNull(getActivity()).findViewById(R.id.nav_view);
             mNavigationView.getMenu().clear();
             mNavigationView.inflateMenu(R.menu.drawermenu);
             View headerLayout = mNavigationView.getHeaderView(0);
@@ -280,7 +278,7 @@ public class LoginFragment extends BaseFragment implements
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
                 Log.w(TAG, "Google sign in failed", e);
-                Toast.makeText(mActivity, e.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), e.toString(), Toast.LENGTH_LONG).show();
                 updateUI(null);
             }
         }
@@ -325,9 +323,14 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        Objects.requireNonNull(mActivity).setTitle(R.string.fragment_user);
+        mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
+        mainViewModel.setFirebaseAuth(mAuth);
+        mainViewModel.setFireBaseUser(currentUser);
+        updateUI(currentUser);
+        Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
         if (currentUser == null) {
-            ((MainActivity) Objects.requireNonNull(mActivity)).setNavItemChecked(R.id.menu_item_login);
+            ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_login);
         }
 
     }
@@ -335,9 +338,9 @@ public class LoginFragment extends BaseFragment implements
     @SuppressLint("InflateParams")
     public void onCreateDialogFragment() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(mActivity));
+        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
         // Get the layout inflater
-        LayoutInflater inflater = mActivity.getLayoutInflater();
+        LayoutInflater inflater = getActivity().getLayoutInflater();
 
 
         // Inflate and set the layout for the dialog
