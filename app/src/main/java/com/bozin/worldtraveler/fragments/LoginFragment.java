@@ -323,11 +323,8 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        mAuth = FirebaseAuth.getInstance();
-        currentUser = mAuth.getCurrentUser();
-        mainViewModel.setFirebaseAuth(mAuth);
-        mainViewModel.setFireBaseUser(currentUser);
-        updateUI(currentUser);
+        FirebaseUser firebaseUser = mainViewModel.getFireBaseUser();
+        updateUI(firebaseUser);
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
         if (currentUser == null) {
             ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_login);

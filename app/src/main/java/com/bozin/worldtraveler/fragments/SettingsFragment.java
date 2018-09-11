@@ -26,6 +26,5 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         super.onResume();
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_settings);
         ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_settings);
-
     }
 }

@@ -32,6 +32,7 @@ import com.bozin.worldtraveler.fragments.ProfileFragment;
 import com.bozin.worldtraveler.fragments.SettingsFragment;
 import com.bozin.worldtraveler.fragments.StatisticsFragment;
 import com.bozin.worldtraveler.viewModels.MainViewModel;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.mikhaellopez.circularimageview.CircularImageView;
 import com.squareup.picasso.Picasso;
@@ -347,6 +348,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(getString(R.string.sp_logged_in_status), 0);
         editor.apply();
+        viewModel.setFireBaseUser(null);
+        viewModel.setFirebaseAuth(null);
         updateOptionsMenu();
 
         LoginFragment loginFragment = LoginFragment.newInstance(1);

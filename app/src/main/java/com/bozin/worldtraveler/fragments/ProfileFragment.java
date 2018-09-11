@@ -35,6 +35,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,8 +69,8 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
 
         viewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
-
-        profileBinding.textView2.setText("IGOR BOZIN");
+        User currentUser = viewModel.getCurrentUser();
+        profileBinding.textView2.setText(currentUser.getUserName());
 
         if (supportMapFragment == null) {
             supportMapFragment = SupportMapFragment.newInstance(options);
@@ -77,7 +78,6 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
         }
         getChildFragmentManager().beginTransaction().replace(R.id.fragment_profile_map, supportMapFragment).commit();
         return profileBinding.getRoot();
-
     }
 
 

@@ -62,6 +62,8 @@ public class MainViewModel extends AndroidViewModel {
         countriesVisited = new LinkedHashMap<>();
         placesHashMap = new LinkedHashMap<>();
         mDatabaseReference = FirebaseDatabase.getInstance().getReference("users");
+        mAuth = FirebaseAuth.getInstance();
+        mFireBaseUser = mAuth.getCurrentUser();
     }
 
     public LiveData<List<Place>> getPlacesList() {
@@ -87,6 +89,14 @@ public class MainViewModel extends AndroidViewModel {
         return placesHashMap;
     }
 
+
+    public User getCurrentUser(){
+        String _uid = mFireBaseUser.getUid();
+        String _uname = mFireBaseUser.getDisplayName();
+        String _uphoto = mFireBaseUser.getPhotoUrl().toString();
+        String _friends = "";
+        return new User(_uid, _uname, "", _friends);
+    }
 
     //NEED TO CALL THIS FIRST TO INIT PLACES HASHMAP
     private void createMarkersFromPlaces(List<Place> list, Object... objects) {
@@ -177,6 +187,7 @@ public class MainViewModel extends AndroidViewModel {
 
 
     public Completable signInWithEmail(String email, String password, Activity activity) {
+        initFireBase();
         return Completable.create(emitter -> mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(Objects.requireNonNull(activity), task -> {
                     if (task.isSuccessful()) {
@@ -191,6 +202,7 @@ public class MainViewModel extends AndroidViewModel {
 
 
     public Completable firebaseAuthWithGoogle(GoogleSignInAccount acct, Activity activity) {
+        initFireBase();
         return Completable.create(emitter -> {
             Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
             AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -303,5 +315,9 @@ public class MainViewModel extends AndroidViewModel {
         return jsonArray;
     }
 
+    private void initFireBase(){
+        mAuth = FirebaseAuth.getInstance();
+        mFireBaseUser = mAuth.getCurrentUser();
+    }
 
 }
