@@ -29,11 +29,11 @@ import android.widget.Toast;
 import com.bozin.worldtraveler.fragments.LoginFragment;
 import com.bozin.worldtraveler.fragments.MapFragment;
 import com.bozin.worldtraveler.fragments.ProfileFragment;
+import com.bozin.worldtraveler.fragments.SearchFragment;
 import com.bozin.worldtraveler.fragments.SettingsFragment;
 import com.bozin.worldtraveler.fragments.StatisticsFragment;
+import com.bozin.worldtraveler.model.User;
 import com.bozin.worldtraveler.viewModels.MainViewModel;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.mikhaellopez.circularimageview.CircularImageView;
 import com.squareup.picasso.Picasso;
 
@@ -162,6 +162,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 case R.id.menu_item_user:
                     Fragment profile = new ProfileFragment();
                     switchFragment(mFragmentManager, profile, getString(R.string.fragment_user));
+                    break;
+                case R.id.menu_item_friends:
+                    Fragment search = new SearchFragment();
+                    switchFragment(mFragmentManager, search,  getString(R.string.menu_item_friends));
                     break;
                 default:
                     Fragment defaultMap = new MapFragment();
@@ -299,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onLoginUpdate() {
-        FirebaseUser currentUser = viewModel.getFireBaseUser();
+        User currentUser = viewModel.getUser();
         if (currentUser != null) {
             mNavigationView.getMenu().clear();
             mNavigationView.inflateMenu(R.menu.drawermenu_logged_in);
@@ -309,22 +313,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             headerLayout = mNavigationView.getHeaderView(0);
             CircularImageView profilePicture = headerLayout.findViewById(R.id.iv_profile_picture);
             TextView profile_nameTV = headerLayout.findViewById(R.id.tv_profile_name);
-            Uri photoUrl = currentUser.getPhotoUrl();
+            Uri photoUrl = Uri.parse(currentUser.getUserPicturePath());
             if (photoUrl != null && profilePicture != null) {
                 Picasso.get().load(photoUrl).into(profilePicture);
             } else {
                 Picasso.get().load(R.drawable.earth_icon).into(profilePicture);
             }
-            String profile_name = currentUser.getDisplayName();
+            String profile_name = currentUser.getUserName();
 
             if (profile_name != null && profile_nameTV != null) {
                 profile_nameTV.setText(profile_name);
             }
             createMenuLoggedIn();
 
-            //Add user to firebase database
-            viewModel.addUserToDatabase();
-            Log.d(TAG, "User added to online database");
 
             //Update actionbar menu
             updateOptionsMenu();
@@ -339,6 +340,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             fragmentTransaction.replace(R.id.container, profileFragment)
                     .setReorderingAllowed(true)
                     .commit();
+        } else {
+            //Add user to firebase database
+            viewModel.addUserToDatabase();
+            Log.d(TAG, "User added to online database");
         }
     }
 
@@ -348,8 +353,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(getString(R.string.sp_logged_in_status), 0);
         editor.apply();
-        viewModel.setFireBaseUser(null);
-        viewModel.setFirebaseAuth(null);
+        viewModel.setUser(null);
+
+        //Update navigation drawer
+        mNavigationView.getMenu().clear();
+        mNavigationView.inflateMenu(R.menu.drawermenu);
+        View headerLayout = mNavigationView.getHeaderView(0);
+        mNavigationView.removeHeaderView(headerLayout);
+        mNavigationView.inflateHeaderView(R.layout.drawer_header);
+
+
         updateOptionsMenu();
 
         LoginFragment loginFragment = LoginFragment.newInstance(1);
@@ -360,7 +373,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         createMenu();
         loginFragment.signOut();
         Log.d(TAG, "USER SIGNED OUT");
-
     }
 
 

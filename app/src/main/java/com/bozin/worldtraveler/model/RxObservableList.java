@@ -37,6 +37,8 @@ public class RxObservableList<T> extends AbstractList<T> implements List<T>, Obs
         return (ArrayList<Uri>) elements;
     }
 
+    public ArrayList<User> getUserList(){return (ArrayList<User>) elements;}
+
     public PublishSubject<RxObservableList<T>> getObservable(){
         return onAdd;
     }

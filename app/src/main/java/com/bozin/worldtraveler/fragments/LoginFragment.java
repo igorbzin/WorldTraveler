@@ -30,6 +30,7 @@ import android.widget.Toast;
 import com.bozin.worldtraveler.MainActivity;
 import com.bozin.worldtraveler.R;
 import com.bozin.worldtraveler.databinding.FragmentUserBinding;
+import com.bozin.worldtraveler.model.User;
 import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -41,18 +42,20 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Objects;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableCompletableObserver;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
 
 public class LoginFragment extends BaseFragment implements
         View.OnClickListener {
+
+    private User user;
 
     private EditText etEmail;
     private EditText etPassword;
@@ -63,9 +66,7 @@ public class LoginFragment extends BaseFragment implements
     private onLoggedInHandler mOnLoggedInHandler;
     private AlertDialog loadingDialog;
     private CompositeDisposable disposable = new CompositeDisposable();
-    private FirebaseAuth mAuth;
-    private FirebaseUser currentUser;
-
+    private User loginUser;
 
     private static final int RC_SIGN_IN = 9001;
     private MainViewModel mainViewModel;
@@ -155,14 +156,15 @@ public class LoginFragment extends BaseFragment implements
 
 
             disposable.add(mainViewModel.signInWithEmail(email, password, getActivity())
+                    .andThen(mainViewModel.observeUser())
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeWith(new DisposableCompletableObserver() {
+                    .subscribeWith(new DisposableObserver<User>() {
                         @Override
-                        public void onComplete() {
+                        public void onNext(User user) {
                             Log.d(TAG, "OnComplete called");
                             loadingDialog.dismiss();
-                            updateUI(mainViewModel.getFireBaseUser());
+                            updateUI(user);
                         }
 
                         @Override
@@ -196,8 +198,14 @@ public class LoginFragment extends BaseFragment implements
                             updateUI(null);
                         }
 
+                        @Override
+                        public void onComplete() {
 
+                        }
                     }));
+
+
+
         });
 
         return view;
@@ -216,7 +224,6 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onStart() {
         super.onStart();
-        mainViewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
     }
 
     @Override
@@ -227,15 +234,45 @@ public class LoginFragment extends BaseFragment implements
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString() + "must implement onLoggedInHandler!");
         }
-    }
+        mainViewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
+        int loggedIn = mainViewModel.initFireBase();
+        Log.d(TAG, "Firebase instance initiated, user logged in found: " + loggedIn);
+        if (loggedIn == 1) {
+            disposable.add(mainViewModel.observeUser()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new DisposableObserver<User>() {
+                        @Override
+                        public void onNext(User user) {
+                            mainViewModel.setUser(user);
+                            loginUser = user;
+                            updateUI(user);
+                            Log.d(TAG, "ONNEXT CALLED TO RETRIEVE USER");
+                        }
 
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.d(TAG, "ONERROR CALLED WHEN RETREIVING LOGGED IN USER");
+
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            Log.d(TAG, "ONCOMPLETE CALLED WHEN RETRIEVING USER");
+
+                        }
+                    }));
+
+        }
+
+    }
 
     public void signOut() {
         FirebaseAuth.getInstance().signOut();
     }
 
-    private void updateUI(FirebaseUser firebaseUser) {
-        if (firebaseUser != null) {
+    private void updateUI(User user) {
+        if (user != null) {
             mOnLoggedInHandler.onLoginUpdate();
         } else {
             NavigationView mNavigationView = Objects.requireNonNull(getActivity()).findViewById(R.id.nav_view);
@@ -253,28 +290,38 @@ public class LoginFragment extends BaseFragment implements
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 // Google Sign In was successful, authenticate with Firebase
                 // [END_EXCLUDE]
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                disposable.add(mainViewModel.firebaseAuthWithGoogle(account, getActivity())
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribeWith(new DisposableCompletableObserver() {
-                            @Override
-                            public void onComplete() {
-                                loadingDialog.dismiss();
-                                updateUI(mainViewModel.getFireBaseUser());
-                            }
+                disposable.add(
+                        mainViewModel.firebaseAuthWithGoogle(account, getActivity())
+                                .andThen(mainViewModel.observeUser())
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribeWith(new DisposableObserver<User>() {
+                                    @Override
+                                    public void onNext(User user) {
+                                        loadingDialog.dismiss();
+                                        Log.d(TAG, "Dismiss dialog");
+                                        Log.d(TAG, "User is logged in : " + user.getUserName());
+                                        updateUI(user);
+                                    }
 
-                            @Override
-                            public void onError(Throwable e) {
-                                loadingDialog.dismiss();
-                                Log.d(TAG, "Error signing in with Google: " + e.toString());
-                            }
-                        }));
+                                    @Override
+                                    public void onError(Throwable e) {
+                                        Log.d(TAG, "ONERROR: " + e.toString());
+                                    }
+
+                                    @Override
+                                    public void onComplete() {
+                                        Log.d(TAG, "Google Sign in onComplete");
+                                    }
+                                }));
+
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
                 Log.w(TAG, "Google sign in failed", e);
@@ -323,10 +370,8 @@ public class LoginFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        FirebaseUser firebaseUser = mainViewModel.getFireBaseUser();
-        updateUI(firebaseUser);
         Objects.requireNonNull(getActivity()).setTitle(R.string.fragment_user);
-        if (currentUser == null) {
+        if (loginUser == null) {
             ((MainActivity) Objects.requireNonNull(getActivity())).setNavItemChecked(R.id.menu_item_login);
         }
 
@@ -383,7 +428,7 @@ public class LoginFragment extends BaseFragment implements
     public void onPause() {
         super.onPause();
         disposable.clear();
-        if (currentUser == null) {
+        if (loginUser == null) {
             ((MainActivity) Objects.requireNonNull(getActivity())).uncheckNavItem(R.id.menu_item_login);
         }
     }

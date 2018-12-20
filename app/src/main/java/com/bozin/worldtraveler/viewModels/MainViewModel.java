@@ -30,8 +30,11 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,6 +45,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.reactivex.Completable;
+import io.reactivex.Observable;
 
 
 public class MainViewModel extends AndroidViewModel {
@@ -50,9 +54,11 @@ public class MainViewModel extends AndroidViewModel {
     private LiveData<List<Place>> placesList;
     private LinkedHashMap<Integer, String> countriesVisited;
     private LinkedHashMap<Integer, MarkerOptions> placesHashMap;
-    private FirebaseAuth mAuth ;
+    private FirebaseAuth mAuth;
     private FirebaseUser mFireBaseUser;
     private DatabaseReference mDatabaseReference;
+    private User user;
+
 
 
     public MainViewModel(@NonNull Application application) {
@@ -62,8 +68,6 @@ public class MainViewModel extends AndroidViewModel {
         countriesVisited = new LinkedHashMap<>();
         placesHashMap = new LinkedHashMap<>();
         mDatabaseReference = FirebaseDatabase.getInstance().getReference("users");
-        mAuth = FirebaseAuth.getInstance();
-        mFireBaseUser = mAuth.getCurrentUser();
     }
 
     public LiveData<List<Place>> getPlacesList() {
@@ -90,13 +94,34 @@ public class MainViewModel extends AndroidViewModel {
     }
 
 
-    public User getCurrentUser(){
-        String _uid = mFireBaseUser.getUid();
-        String _uname = mFireBaseUser.getDisplayName();
-        String _uphoto = mFireBaseUser.getPhotoUrl().toString();
-        String _friends = "";
-        return new User(_uid, _uname, "", _friends);
+    public Observable<User> observeUser() {
+        return Observable.create(emitter -> {
+            try {
+                if (user == null) {
+                    DatabaseReference userData = mDatabaseReference.child(mFireBaseUser.getUid());
+                    userData.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            user = dataSnapshot.getValue(User.class);
+                            Log.d(TAG, "OnDataChange called");
+                            emitter.onNext(user);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                            Log.d(TAG, "OnCancelled called");
+                        }
+                    });
+                }
+            } catch (Throwable t) {
+                Log.d(TAG, "ERROR IN VIEWMODEL OBSERVABLE" + t);
+                emitter.onError(t);
+            }
+        });
     }
+
+
+
 
     //NEED TO CALL THIS FIRST TO INIT PLACES HASHMAP
     private void createMarkersFromPlaces(List<Place> list, Object... objects) {
@@ -138,10 +163,6 @@ public class MainViewModel extends AndroidViewModel {
         }
     }
 
-    public void setFirebaseAuth(FirebaseAuth auth){
-        mAuth = auth;
-    }
-
 
     @SuppressLint("ObsoleteSdkInt")
     private static Bitmap getBitmapFromVectorDrawable(Context context, int drawableId) {
@@ -177,17 +198,15 @@ public class MainViewModel extends AndroidViewModel {
     }
 
 
-    public FirebaseUser getFireBaseUser() {
-        return mFireBaseUser;
+    public User getUser() {
+        return user;
     }
 
-    public void setFireBaseUser(FirebaseUser fireBaseUser){
-        mFireBaseUser = fireBaseUser;
+    public void setUser(User user) {
+        this.user = user;
     }
-
 
     public Completable signInWithEmail(String email, String password, Activity activity) {
-        initFireBase();
         return Completable.create(emitter -> mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(Objects.requireNonNull(activity), task -> {
                     if (task.isSuccessful()) {
@@ -200,9 +219,7 @@ public class MainViewModel extends AndroidViewModel {
                 }));
     }
 
-
     public Completable firebaseAuthWithGoogle(GoogleSignInAccount acct, Activity activity) {
-        initFireBase();
         return Completable.create(emitter -> {
             Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
             AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -223,29 +240,24 @@ public class MainViewModel extends AndroidViewModel {
 
     }
 
+
+
+
     public void resetPassword(String email) {
         mAuth.sendPasswordResetEmail(email);
     }
 
     public void addUserToDatabase() {
-        //Add currentUser to firebase database
-        String _uuid = mFireBaseUser.getUid();
-        String _uname = mFireBaseUser.getDisplayName();
-        String _upicture = "";
-        if (mFireBaseUser.getPhotoUrl() != null) {
-          _upicture = Objects.requireNonNull(mFireBaseUser.getPhotoUrl()).toString();
-        }
-        User currentUser = new User(_uuid, _uname, _upicture, "");
-        mDatabaseReference.child(_uuid).setValue(currentUser);
+        mDatabaseReference.child(user.getUuid()).setValue(user);
     }
 
 
-    public void updateDbUserData(Context context){
+    public void updateDbUserData(Context context) {
         SharedPreferences sharedPreferences = android.support.v7.preference.PreferenceManager.getDefaultSharedPreferences(context);
         boolean visibility = sharedPreferences.getBoolean(context.getString(R.string.pref_search_key), false);
         int visible = visibility ? 1 : 0;
         try {
-            mDatabaseReference.child(mFireBaseUser.getUid()).child("visibility").setValue(visible);
+            mDatabaseReference.child(mFireBaseUser.getUid()).child("visibility").setValue(visible + "_" + Objects.requireNonNull(mFireBaseUser.getDisplayName()).toLowerCase());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -315,9 +327,23 @@ public class MainViewModel extends AndroidViewModel {
         return jsonArray;
     }
 
-    private void initFireBase(){
-        mAuth = FirebaseAuth.getInstance();
-        mFireBaseUser = mAuth.getCurrentUser();
+    public FirebaseUser getmFireBaseUser() {
+        return mFireBaseUser;
     }
 
+    @SuppressLint("CheckResult")
+    public int initFireBase() {
+        int userLoggedIn = 0;
+        if (mAuth == null && mFireBaseUser == null) {
+            mAuth = FirebaseAuth.getInstance();
+            mFireBaseUser = mAuth.getCurrentUser();
+            if (mFireBaseUser != null) {
+                userLoggedIn = 1;
+            }
+
+        }
+        return userLoggedIn;
+
+    }
 }
+

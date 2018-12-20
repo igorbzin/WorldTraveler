@@ -24,7 +24,7 @@
         android:layout_alignBottom="@id/google_map"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="32dp"
         android:text="@string/tv_delete"
         android:textAlignment="center"
         android:textSize="24sp"
@@ -36,10 +36,10 @@
 
     <Button
         android:id="@+id/btn_add_place"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_marginBottom="64dp"
-        android:layout_marginEnd="64dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="42dp"
+        android:layout_marginBottom="42dp"
         android:background="@drawable/ic_add_circle_black_24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

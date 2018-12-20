@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <TextView
+        android:id="@+id/tv_statistics_personal_caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/tv_statistics_headline"
+        android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <TextView
+        android:id="@+id/tv_statistics_cites_visited"
+        android:layout_width="wrap_content"
+        android:layout_height="29dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginTop="32dp"
+        android:text="@string/tv_statistics_cities_string"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_statistics_personal_caption" />
+
+    <ImageView
+        android:id="@+id/iv_earth_icon"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/earth_icon"
+        app:layout_constraintEnd_toEndOf="@+id/tv_statistics_cites_visited"
+        app:layout_constraintHeight_default="percent"
+        app:layout_constraintHeight_percent=".3"
+        app:layout_constraintHorizontal_bias="0.51"
+        app:layout_constraintStart_toStartOf="@+id/tv_statistics_cites_visited"
+        app:layout_constraintTop_toBottomOf="@+id/tv_statistics_cites_visited"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".3" />
+
+    <TextView
+        android:id="@+id/tv_number_of_cities_visited"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="0"
+        android:textColor="@color/textWhite"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_earth_icon"
+        app:layout_constraintEnd_toEndOf="@+id/iv_earth_icon"
+        app:layout_constraintStart_toStartOf="@+id/iv_earth_icon"
+        app:layout_constraintTop_toTopOf="@+id/iv_earth_icon" />
+
+
+    <TextView
+        android:id="@+id/tv_statistics_countries_visited"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="118dp"
+        android:layout_marginTop="32dp"
+        android:text="@string/tv_statistics_countries_string"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textSize="24sp"
+        app:layout_constraintStart_toEndOf="@+id/tv_statistics_cites_visited"
+        app:layout_constraintTop_toBottomOf="@+id/tv_statistics_personal_caption" />
+
+    <ImageView
+        android:id="@+id/iv_earth_icon2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/earth_icon"
+        app:layout_constraintEnd_toEndOf="@+id/tv_statistics_countries_visited"
+        app:layout_constraintHeight_default="percent"
+        app:layout_constraintHeight_percent=".3"
+        app:layout_constraintStart_toStartOf="@+id/tv_statistics_countries_visited"
+        app:layout_constraintTop_toBottomOf="@+id/tv_statistics_countries_visited"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".3" />
+
+    <TextView
+        android:id="@+id/tv_number_of_countries_visited"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="0"
+        android:textColor="@color/textWhite"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_earth_icon2"
+        app:layout_constraintEnd_toEndOf="@+id/iv_earth_icon2"
+        app:layout_constraintStart_toStartOf="@+id/iv_earth_icon2"
+        app:layout_constraintTop_toTopOf="@+id/iv_earth_icon2" />
+
+    <ProgressBar
+        android:id="@+id/pb_percentage_world"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:clickable="false"
+        android:indeterminate="false"
+        android:progressDrawable="@drawable/progress"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_percentage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/pb_percentage_world"
+        app:layout_constraintEnd_toEndOf="@+id/pb_percentage_world"
+        app:layout_constraintStart_toStartOf="@+id/pb_percentage_world"
+        app:layout_constraintTop_toTopOf="@+id/pb_percentage_world" />
+
+    <TextView
+        android:id="@+id/tv_statistics_percentage_caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/iv_earth_icon2"
+        tools:text="@string/tv_statistics_percentage_caption" />
+
+
+</android.support.constraint.ConstraintLayout>

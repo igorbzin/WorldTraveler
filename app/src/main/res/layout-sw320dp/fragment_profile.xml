@@ -16,12 +16,13 @@
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="24dp"
-            android:textSize="24sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="John Doe" />
+
 
         <com.google.android.gms.maps.MapView xmlns:map="http://schemas.android.com/apk/res-auto"
             android:id="@+id/mapview"
@@ -39,32 +40,15 @@
             map:liteMode="true"
             map:mapType="normal" />
 
-        <!--
-        <FrameLayout
-            android:id="@+id/fragment_profile_map"
-            android:name="com.google.android.gms.maps.MapFragment"
-            android:layout_width="256dp"
-            android:layout_height="300dp"
-            android:layout_marginBottom="40dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="16dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.461"
-            app:layout_constraintStart_toStartOf="parent"
-            map:cameraZoom="0"
-            map:liteMode="true"
-            map:mapType="normal" />
 
-            -->
 
         <Button
             android:id="@+id/btn_fragment_profile_share"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:layout_marginEnd="8dp"
+            android:layout_height="32dp"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
             android:background="@drawable/roundedbutton"
             android:text="@string/btn_profile_fragment_share"
             android:textColor="@color/textWhite"
@@ -74,8 +58,8 @@
 
         <ImageView
             android:id="@+id/iv_profile_badge"
-            android:layout_width="80dp"
-            android:layout_height="120dp"
+            android:layout_width="50dp"
+            android:layout_height="80dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="64dp"
@@ -123,8 +107,8 @@
 
         <ImageView
             android:id="@+id/iv_profile_earth_icon2"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginBottom="20dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
@@ -141,8 +125,8 @@
 
         <ImageView
             android:id="@+id/iv_profile_earth_icon"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:src="@drawable/earth_icon"
@@ -165,7 +149,7 @@
             android:layout_marginTop="8dp"
             tools:text="10"
             android:textColor="@color/textWhite"
-            android:textSize="24sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@+id/iv_profile_earth_icon2"
             app:layout_constraintEnd_toEndOf="@+id/iv_profile_earth_icon2"
@@ -181,7 +165,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             tools:text="15"
-            android:textSize="24sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/textWhite"
             app:layout_constraintBottom_toBottomOf="@+id/iv_profile_earth_icon"

@@ -9,15 +9,17 @@ public class User implements Parcelable {
     private String userName;
     private String userPicturePath;
     private String friendsList;
+    private String visibility;
 
 
+    public User(){}
 
-
-    public User (String uuid, String userName, String userPicturePath, String friendsList){
+    public User (String uuid, String userName, String userPicturePath, String friendsList,String visibility){
         this.uuid = uuid;
         this.userName = userName;
         this.userPicturePath = userPicturePath;
         this.friendsList = friendsList;
+        this.visibility = visibility;
     }
 
     public String getUuid() {
@@ -52,6 +54,13 @@ public class User implements Parcelable {
         this.friendsList = friendsList;
     }
 
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
 
     @Override
     public int describeContents() {
@@ -64,6 +73,7 @@ public class User implements Parcelable {
         dest.writeString(this.userName);
         dest.writeString(this.userPicturePath);
         dest.writeString(this.friendsList);
+        dest.writeString(this.visibility);
     }
 
     protected User(Parcel in) {
@@ -71,6 +81,7 @@ public class User implements Parcelable {
         this.userName = in.readString();
         this.userPicturePath = in.readString();
         this.friendsList = in.readString();
+        this.visibility = in.readString();
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {

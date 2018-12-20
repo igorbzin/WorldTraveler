@@ -86,7 +86,7 @@
     <string name="tv_login_pwd_forgotten">Forgot your password?</string>
     <string name="tv_login_email">E-Mail</string>
     <string name="tv_login_password">Password</string>
-    <string name="tv_no_user_account">No currentUser account? Register now!</string>
+    <string name="tv_no_user_account">No current User account? Register now!</string>
     <string name="btn_login">Sign in</string>
     <string name="btn_user_register">Register</string>
     <string name="sb_login_successfull">Successful login!</string>
@@ -129,7 +129,7 @@
     <string name="error_invalid_pwd">The password is invalid.</string>
     <string name="error_invalid_user">There is no currentUser corresponding to this email. </string>
     <string name="error_no_internet_connection">You have no internet connection, please reconnect and try again!</string>
-
+    <string name="placeholder_uname">Dwayne Johnson</string>
 
 
 </resources>

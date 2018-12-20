@@ -30,6 +30,7 @@ import com.bozin.worldtraveler.viewModels.MainViewModel;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -44,6 +45,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 
 public class ProfileFragment extends Fragment implements OnMapReadyCallback {
 
@@ -54,7 +65,7 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     private MainViewModel viewModel;
     private FragmentProfileBinding profileBinding;
     private LinkedHashMap<Integer, MarkerOptions> markerHashMap;
-    private User currentUser;
+    private MapView mMapView;
 
     public interface onSignedOutHandler {
         void onSignedOut();
@@ -65,18 +76,47 @@ public class ProfileFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         profileBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false);
-        GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
+        //GoogleMapOptions options = new GoogleMapOptions().liteMode(true);
 
 
         viewModel = MainViewModel.getViewModel(Objects.requireNonNull(getActivity()));
-        User currentUser = viewModel.getCurrentUser();
-        profileBinding.textView2.setText(currentUser.getUserName());
+        Single.create((SingleOnSubscribe<User>) emitter -> {
+            try {
+                User currentUser = viewModel.getUser();
+                emitter.onSuccess(currentUser);
+            } catch (Exception e) {
+                emitter.onError(e);
+            }
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<User>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-        if (supportMapFragment == null) {
+                    }
+
+                    @Override
+                    public void onSuccess(User user) {
+                        profileBinding.textView2.setText(user.getUserName());
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+                });
+
+
+        /*if (supportMapFragment == null) {
             supportMapFragment = SupportMapFragment.newInstance(options);
             supportMapFragment.getMapAsync(this);
         }
-        getChildFragmentManager().beginTransaction().replace(R.id.fragment_profile_map, supportMapFragment).commit();
+        */
+        //getChildFragmentManager().beginTransaction().replace(R.id.fragment_profile_map, supportMapFragment).commit();
+        mMapView = profileBinding.mapview;
+        mMapView.onCreate(null);
+        mMapView.getMapAsync(this);
+
         return profileBinding.getRoot();
     }
 
